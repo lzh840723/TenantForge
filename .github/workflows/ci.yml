@@ -87,7 +87,7 @@ jobs:
             IMAGE_TAG="ghcr.io/${{ github.repository_owner }}/tenantforge-backend:${{ github.sha }}"
           fi
 
-          HEALTH_OPTS=("--checks" "8080:tcp" "--checks-grace-period" "8080=30")
+          HEALTH_OPTS=("--checks" "8080:tcp" "--checks-grace-period" "8080=60")
 
           if ! koyeb services get "$SERVICE_REF" --token "$KOYEB_API_KEY" >/dev/null 2>&1; then
             koyeb services create "$KOYEB_SERVICE_NAME" \

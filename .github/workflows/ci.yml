@@ -37,7 +37,7 @@ jobs:
           DIRECT_CONNECTION: ${{ secrets.DIRECT_CONNECTION }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           JAVA_TOOL_OPTIONS: -Djava.net.preferIPv4Stack=true
-        run: mvn -f backend/pom.xml clean verify
+        run: mvn -f backend/pom.xml -Dmaven.wagon.http.retryHandler.count=5 -B clean verify
 
       - name: Build & push image
         env:

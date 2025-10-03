@@ -3,9 +3,12 @@ package com.tenantforge.app;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+import com.tenantforge.app.security.TokenPair;
+import com.tenantforge.app.service.AuthService;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +41,21 @@ class TenantForgeApplicationTests {
     @Test
     void contextLoads(@Autowired Environment environment) {
         assertThat(environment.getProperty("spring.application.name")).isEqualTo("tenantforge-backend");
+    }
+
+    @Test
+    void registerAndLoginRoundtrip(@Autowired AuthService authService) {
+        String tenantName = "Tenant-" + UUID.randomUUID();
+        String email = "owner-" + UUID.randomUUID() + "@tenantforge.dev";
+        String password = "Password123!";
+
+        TokenPair registerTokens = authService.registerTenant(tenantName, email, password, "Primary Owner");
+        assertThat(registerTokens.accessToken()).isNotBlank();
+        assertThat(registerTokens.refreshToken()).isNotBlank();
+
+        TokenPair loginTokens = authService.login(email, password);
+        assertThat(loginTokens.accessToken()).isNotBlank();
+        assertThat(loginTokens.refreshToken()).isNotBlank();
     }
 
     private static final class RemoteDbConfig {

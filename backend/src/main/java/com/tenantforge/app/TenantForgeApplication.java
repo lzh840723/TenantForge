@@ -13,8 +13,12 @@ public class TenantForgeApplication {
     private static final Logger log = LoggerFactory.getLogger(TenantForgeApplication.class);
 
     public static void main(String[] args) {
-        log.info("Detected PORT env: {}", System.getenv("PORT"));
-        log.info("Effective server.port property: {}", System.getProperty("server.port"));
+        String portEnv = System.getenv("PORT");
+        String serverPortProp = System.getProperty("server.port");
+        String runtimePort = portEnv != null ? portEnv : serverPortProp;
+        log.info("Detected PORT env: {}", portEnv);
+        log.info("Effective server.port property: {}", serverPortProp);
+        log.info("Runtime listening port resolved to: {}", runtimePort);
         SpringApplication.run(TenantForgeApplication.class, args);
     }
 }

@@ -42,7 +42,14 @@ jobs:
         run: mvn -f backend/pom.xml clean verify
 
       - name: Log in to GHCR
-        run: echo $GHCR_TOKEN | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin
+        env:
+          GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+        run: |
+          if [ -z "$GHCR_USERNAME" ] || [ -z "$GHCR_TOKEN" ]; then
+            echo "GHCR credentials not set; skipping image build" && exit 1
+          fi
+          echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin
 
       - name: Build Docker image
         run: docker build -t "$IMAGE_TAG" backend
@@ -51,7 +58,20 @@ jobs:
         run: docker push "$IMAGE_TAG"
 
       - name: Deploy to Koyeb
+        env:
+          KOYEB_API_KEY: ${{ secrets.KOYEB_API_KEY }}
+          SPRING_DATASOURCE_URL: ${{ secrets.SPRING_DATASOURCE_URL }}
+          SPRING_DATASOURCE_USERNAME: ${{ secrets.SPRING_DATASOURCE_USERNAME }}
+          SPRING_DATASOURCE_PASSWORD: ${{ secrets.SPRING_DATASOURCE_PASSWORD }}
+          DIRECT_CONNECTION: ${{ secrets.DIRECT_CONNECTION }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          KOYEB_APP_NAME: tenantforge-api
+          KOYEB_SERVICE_NAME: tenantforge-service
+          IMAGE_TAG: ghcr.io/${{ secrets.GHCR_USERNAME }}/tenantforge-backend:${{ github.sha }}
         run: |
+          if [ -z "$KOYEB_API_KEY" ]; then
+            echo "KOYEB_API_KEY not set; skipping deploy" && exit 1
+          fi
           if ! koyeb app get "$KOYEB_APP_NAME" --token "$KOYEB_API_KEY" >/dev/null 2>&1; then
             koyeb app create "$KOYEB_APP_NAME" --token "$KOYEB_API_KEY"
           fi
@@ -66,18 +86,6 @@ jobs:
             --env JWT_SECRET="$JWT_SECRET" \
             --ports http:8080 \
             --strategy rolling
-        env:
-          KOYEB_APP_NAME: ${{ env.KOYEB_APP_NAME }}
-          KOYEB_SERVICE_NAME: ${{ env.KOYEB_SERVICE_NAME }}
-          KOYEB_API_KEY: ${{ secrets.KOYEB_API_KEY }}
-          SPRING_DATASOURCE_URL: ${{ secrets.SPRING_DATASOURCE_URL }}
-          SPRING_DATASOURCE_USERNAME: ${{ secrets.SPRING_DATASOURCE_USERNAME }}
-          SPRING_DATASOURCE_PASSWORD: ${{ secrets.SPRING_DATASOURCE_PASSWORD }}
-          DIRECT_CONNECTION: ${{ secrets.DIRECT_CONNECTION }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          IMAGE_TAG: ${{ env.IMAGE_TAG }}
-          GHCR_USERNAME: ${{ env.GHCR_USERNAME }}
-          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
 
   deploy-frontend:
     runs-on: ubuntu-latest
@@ -95,14 +103,19 @@ jobs:
 
       - name: Deploy Frontend
         working-directory: frontend
-        run: |
-          vercel deploy \
-            --token "$VERCEL_TOKEN" \
-            --scope "$VERCEL_ORG_ID" \
-            --project "$VERCEL_PROJECT_ID" \
-            --prebuilt \
-            --prod
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          if [ -z "$VERCEL_TOKEN" ]; then
+            echo "VERCEL_TOKEN not set; skipping frontend deploy" && exit 0
+          fi
+          ARGS=("--token" "$VERCEL_TOKEN" "--prebuilt" "--prod" "--yes")
+          if [ -n "$VERCEL_ORG_ID" ]; then
+            ARGS+=("--scope" "$VERCEL_ORG_ID")
+          fi
+          if [ -n "$VERCEL_PROJECT_ID" ]; then
+            ARGS+=("--project" "$VERCEL_PROJECT_ID")
+          fi
+          vercel deploy "${ARGS[@]}"

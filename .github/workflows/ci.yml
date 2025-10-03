@@ -73,23 +73,38 @@ jobs:
           fi
           KOYEB_APP_NAME=tenantforge-api
           KOYEB_SERVICE_NAME=tenantforge-service
-          if ! koyeb app get "$KOYEB_APP_NAME" --token "$KOYEB_API_KEY" >/dev/null 2>&1; then
-            koyeb app create "$KOYEB_APP_NAME" --token "$KOYEB_API_KEY"
+          SERVICE_REF="$KOYEB_APP_NAME/$KOYEB_SERVICE_NAME"
+
+          if ! koyeb apps get "$KOYEB_APP_NAME" --token "$KOYEB_API_KEY" >/dev/null 2>&1; then
+            koyeb apps create "$KOYEB_APP_NAME" --token "$KOYEB_API_KEY"
           fi
+
           if [ -z "$IMAGE_TAG" ]; then
             IMAGE_TAG="ghcr.io/${{ github.repository_owner }}/tenantforge-backend:${{ github.sha }}"
           fi
-          koyeb service deploy "$KOYEB_SERVICE_NAME" \
-            --token "$KOYEB_API_KEY" \
-            --app "$KOYEB_APP_NAME" \
-            --container image="$IMAGE_TAG" \
-            --env SPRING_DATASOURCE_URL="$SPRING_DATASOURCE_URL" \
-            --env SPRING_DATASOURCE_USERNAME="$SPRING_DATASOURCE_USERNAME" \
-            --env SPRING_DATASOURCE_PASSWORD="$SPRING_DATASOURCE_PASSWORD" \
-            --env DIRECT_CONNECTION="$DIRECT_CONNECTION" \
-            --env JWT_SECRET="$JWT_SECRET" \
-            --ports http:8080 \
-            --strategy rolling
+
+          if ! koyeb services get "$SERVICE_REF" --token "$KOYEB_API_KEY" >/dev/null 2>&1; then
+            koyeb services create "$KOYEB_SERVICE_NAME" \
+              --token "$KOYEB_API_KEY" \
+              --app "$KOYEB_APP_NAME" \
+              --docker "$IMAGE_TAG" \
+              --ports 8080:http \
+              --env SPRING_DATASOURCE_URL="$SPRING_DATASOURCE_URL" \
+              --env SPRING_DATASOURCE_USERNAME="$SPRING_DATASOURCE_USERNAME" \
+              --env SPRING_DATASOURCE_PASSWORD="$SPRING_DATASOURCE_PASSWORD" \
+              --env DIRECT_CONNECTION="$DIRECT_CONNECTION" \
+              --env JWT_SECRET="$JWT_SECRET"
+          else
+            koyeb services update "$SERVICE_REF" \
+              --token "$KOYEB_API_KEY" \
+              --docker "$IMAGE_TAG" \
+              --env SPRING_DATASOURCE_URL="$SPRING_DATASOURCE_URL" \
+              --env SPRING_DATASOURCE_USERNAME="$SPRING_DATASOURCE_USERNAME" \
+              --env SPRING_DATASOURCE_PASSWORD="$SPRING_DATASOURCE_PASSWORD" \
+              --env DIRECT_CONNECTION="$DIRECT_CONNECTION" \
+              --env JWT_SECRET="$JWT_SECRET" \
+              --wait
+          fi
 
   deploy-frontend:
     runs-on: ubuntu-latest

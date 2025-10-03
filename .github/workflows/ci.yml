@@ -36,13 +36,16 @@ jobs:
           SPRING_DATASOURCE_PASSWORD: ${{ secrets.SPRING_DATASOURCE_PASSWORD }}
           DIRECT_CONNECTION: ${{ secrets.DIRECT_CONNECTION }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          JAVA_TOOL_OPTIONS: -Djava.net.preferIPv4Stack=true
         run: mvn -f backend/pom.xml clean verify
 
       - name: Build & push image
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           IMAGE_TAG="ghcr.io/${{ github.repository_owner }}/tenantforge-backend:${{ github.sha }}"
           echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
-          echo "${{ github.token }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          echo "$GITHUB_TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
           docker build -t "$IMAGE_TAG" backend
           docker push "$IMAGE_TAG"
 

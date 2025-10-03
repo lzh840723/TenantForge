@@ -51,8 +51,7 @@ jobs:
 
       - name: Install Koyeb CLI
         run: |
-          curl -fsSL https://raw.githubusercontent.com/koyeb/koyeb-cli/main/install.sh | sh
-          echo "$HOME/.koyeb/bin" >> $GITHUB_PATH
+          brew install koyeb/tap/koyeb
 
       - name: Deploy to Koyeb
         env:

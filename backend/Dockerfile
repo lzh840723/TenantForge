@@ -10,4 +10,4 @@ ENV APP_HOME=/opt/app
 WORKDIR ${APP_HOME}
 COPY --from=build /workspace/target/tenantforge-backend-0.1.0-SNAPSHOT.jar app.jar
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["sh", "-c", "java -Dserver.port=${PORT:-8080} -jar app.jar"]

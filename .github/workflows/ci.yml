@@ -83,12 +83,15 @@ jobs:
             IMAGE_TAG="ghcr.io/${{ github.repository_owner }}/tenantforge-backend:${{ github.sha }}"
           fi
 
+          HEALTH_OPTS=("--checks" "8080:http:/api/health" "--checks-grace-period" "8080=30")
+
           if ! koyeb services get "$SERVICE_REF" --token "$KOYEB_API_KEY" >/dev/null 2>&1; then
             koyeb services create "$KOYEB_SERVICE_NAME" \
               --token "$KOYEB_API_KEY" \
               --app "$KOYEB_APP_NAME" \
               --docker "$IMAGE_TAG" \
               --ports 8080:http \
+              "${HEALTH_OPTS[@]}" \
               --env SPRING_DATASOURCE_URL="$SPRING_DATASOURCE_URL" \
               --env SPRING_DATASOURCE_USERNAME="$SPRING_DATASOURCE_USERNAME" \
               --env SPRING_DATASOURCE_PASSWORD="$SPRING_DATASOURCE_PASSWORD" \
@@ -98,6 +101,7 @@ jobs:
             koyeb services update "$SERVICE_REF" \
               --token "$KOYEB_API_KEY" \
               --docker "$IMAGE_TAG" \
+              "${HEALTH_OPTS[@]}" \
               --env SPRING_DATASOURCE_URL="$SPRING_DATASOURCE_URL" \
               --env SPRING_DATASOURCE_USERNAME="$SPRING_DATASOURCE_USERNAME" \
               --env SPRING_DATASOURCE_PASSWORD="$SPRING_DATASOURCE_PASSWORD" \

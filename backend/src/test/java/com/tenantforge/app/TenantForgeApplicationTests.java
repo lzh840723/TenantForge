@@ -1,0 +1,100 @@
+package com.tenantforge.app;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
+
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Optional;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.core.env.Environment;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
+
+@SpringBootTest(properties = "spring.flyway.enabled=false")
+@ActiveProfiles("test")
+class TenantForgeApplicationTests {
+
+    private static final Optional<RemoteDbConfig> REMOTE_DB = RemoteDbConfig.fromEnv();
+
+    @BeforeAll
+    static void checkRemoteConfig() {
+        assumeTrue(REMOTE_DB.isPresent(), () -> "Set DIRECT_CONNECTION env variable before running tests");
+    }
+
+    @DynamicPropertySource
+    static void dataSourceProperties(DynamicPropertyRegistry registry) {
+        RemoteDbConfig dbConfig = REMOTE_DB.orElseThrow();
+        registry.add("spring.datasource.url", dbConfig::jdbcUrl);
+        registry.add("spring.datasource.username", dbConfig::username);
+        registry.add("spring.datasource.password", dbConfig::password);
+        registry.add("spring.datasource.driver-class-name", () -> "org.postgresql.Driver");
+    }
+
+    @Test
+    void contextLoads(@Autowired Environment environment) {
+        assertThat(environment.getProperty("spring.application.name")).isEqualTo("tenantforge-backend");
+    }
+
+    private static final class RemoteDbConfig {
+        private final String jdbcUrl;
+        private final String username;
+        private final String password;
+
+        private RemoteDbConfig(String jdbcUrl, String username, String password) {
+            this.jdbcUrl = jdbcUrl;
+            this.username = username;
+            this.password = password;
+        }
+
+        static Optional<RemoteDbConfig> fromEnv() {
+            String connection = System.getenv("DIRECT_CONNECTION");
+            if (connection == null || connection.isBlank()) {
+                return Optional.empty();
+            }
+            try {
+                URI uri = new URI(connection);
+                String userInfo = Optional.ofNullable(uri.getUserInfo()).orElse("");
+                int index = userInfo.indexOf(':');
+                if (index < 0) {
+                    throw new IllegalArgumentException("DIRECT_CONNECTION must include username and password");
+                }
+                String user = userInfo.substring(0, index);
+                String password = userInfo.substring(index + 1);
+                int port = uri.getPort() > 0 ? uri.getPort() : 5432;
+                StringBuilder jdbc = new StringBuilder("jdbc:postgresql://")
+                        .append(uri.getHost())
+                        .append(":")
+                        .append(port)
+                        .append(uri.getPath());
+                String query = uri.getQuery();
+                if (query == null || query.isBlank()) {
+                    jdbc.append("?sslmode=require");
+                } else if (query.contains("sslmode")) {
+                    jdbc.append("?").append(query);
+                } else {
+                    jdbc.append("?").append(query).append("&sslmode=require");
+                }
+                return Optional.of(new RemoteDbConfig(jdbc.toString(), user, password));
+            } catch (URISyntaxException e) {
+                throw new IllegalArgumentException("DIRECT_CONNECTION has invalid format", e);
+            }
+        }
+
+        String jdbcUrl() {
+            return jdbcUrl;
+        }
+
+        String username() {
+            return username;
+        }
+
+        String password() {
+            return password;
+        }
+    }
+}

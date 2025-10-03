@@ -126,6 +126,9 @@ jobs:
           if [ -z "$VERCEL_TOKEN" ]; then
             echo "VERCEL_TOKEN not set; skipping frontend deploy" && exit 0
           fi
+          if [[ "$VERCEL_TOKEN" == *%* ]]; then
+            echo "VERCEL_TOKEN contains unsupported characters; skipping frontend deploy" && exit 0
+          fi
           ARGS=("--token" "$VERCEL_TOKEN" "--prebuilt" "--prod" "--yes")
           if [ -n "$VERCEL_ORG_ID" ]; then
             ARGS+=("--scope" "$VERCEL_ORG_ID")

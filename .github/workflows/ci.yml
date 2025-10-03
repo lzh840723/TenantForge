@@ -8,6 +8,9 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -36,16 +39,10 @@ jobs:
         run: mvn -f backend/pom.xml clean verify
 
       - name: Build & push image
-        env:
-          REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
-          REGISTRY_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
         run: |
-          if [ -z "$REGISTRY_USERNAME" ] || [ -z "$REGISTRY_TOKEN" ]; then
-            echo "Registry credentials not set; skipping" && exit 1
-          fi
-          IMAGE_TAG="ghcr.io/$REGISTRY_USERNAME/tenantforge-backend:${{ github.sha }}"
+          IMAGE_TAG="ghcr.io/${{ github.repository_owner }}/tenantforge-backend:${{ github.sha }}"
           echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
-          echo "$REGISTRY_TOKEN" | docker login ghcr.io -u "$REGISTRY_USERNAME" --password-stdin
+          echo "${{ github.token }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
           docker build -t "$IMAGE_TAG" backend
           docker push "$IMAGE_TAG"
 
@@ -57,7 +54,6 @@ jobs:
           SPRING_DATASOURCE_PASSWORD: ${{ secrets.SPRING_DATASOURCE_PASSWORD }}
           DIRECT_CONNECTION: ${{ secrets.DIRECT_CONNECTION }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
           IMAGE_TAG: ${{ env.IMAGE_TAG }}
         run: |
           if [ -z "$KOYEB_API_KEY" ]; then
@@ -69,7 +65,7 @@ jobs:
             koyeb app create "$KOYEB_APP_NAME" --token "$KOYEB_API_KEY"
           fi
           if [ -z "$IMAGE_TAG" ]; then
-            IMAGE_TAG="ghcr.io/$REGISTRY_USERNAME/tenantforge-backend:${{ github.sha }}"
+            IMAGE_TAG="ghcr.io/${{ github.repository_owner }}/tenantforge-backend:${{ github.sha }}"
           fi
           koyeb service deploy "$KOYEB_SERVICE_NAME" \
             --token "$KOYEB_API_KEY" \

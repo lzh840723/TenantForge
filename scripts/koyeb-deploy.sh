@@ -23,7 +23,6 @@ jdbc_url() {
     exit 1
   fi
   local without_scheme=${url#postgresql://}
-  local creds=${without_scheme%@*}
   local host_and_db=${without_scheme#*@}
   local host_port=${host_and_db%%/*}
   local db_path=/${host_and_db#*/}
@@ -50,23 +49,23 @@ jdbc_url() {
 
 JDBC_URL=$(jdbc_url "$SPRING_DATASOURCE_URL")
 
-koyeb login --token "$KOYEB_API_KEY"
-
 docker login ghcr.io -u "$GHCR_USERNAME" -p "$GHCR_TOKEN"
 docker build -t "$IMAGE_TAG" backend
 
 docker push "$IMAGE_TAG"
 
-if ! koyeb app get "$APP_NAME" >/dev/null 2>&1; then
-  koyeb app create "$APP_NAME"
+if ! koyeb app get "$APP_NAME" --token "$KOYEB_API_KEY" >/dev/null 2>&1; then
+  koyeb app create "$APP_NAME" --token "$KOYEB_API_KEY"
 fi
 
 koyeb service deploy "$SERVICE_NAME" \
+  --token "$KOYEB_API_KEY" \
   --app "$APP_NAME" \
   --container image="$IMAGE_TAG" \
   --env SPRING_DATASOURCE_URL="$JDBC_URL" \
   --env SPRING_DATASOURCE_USERNAME="$SPRING_DATASOURCE_USERNAME" \
   --env SPRING_DATASOURCE_PASSWORD="$SPRING_DATASOURCE_PASSWORD" \
+  --env JWT_SECRET="${JWT_SECRET:-change-me-change-me-change-me-change-me-123456}" \
   --ports http:8080 \
   --strategy rolling
 

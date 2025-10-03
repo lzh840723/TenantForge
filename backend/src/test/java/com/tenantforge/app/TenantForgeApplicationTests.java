@@ -70,8 +70,16 @@ class TenantForgeApplicationTests {
         }
 
         static Optional<RemoteDbConfig> fromEnv() {
+            String jdbcUrl = System.getenv("SPRING_DATASOURCE_URL");
+            String username = System.getenv("SPRING_DATASOURCE_USERNAME");
+            String password = System.getenv("SPRING_DATASOURCE_PASSWORD");
+
+            if (hasText(jdbcUrl) && hasText(username) && hasText(password)) {
+                return Optional.of(new RemoteDbConfig(jdbcUrl, username, password));
+            }
+
             String connection = System.getenv("DIRECT_CONNECTION");
-            if (connection == null || connection.isBlank()) {
+            if (!hasText(connection)) {
                 return Optional.empty();
             }
             try {
@@ -82,7 +90,7 @@ class TenantForgeApplicationTests {
                     throw new IllegalArgumentException("DIRECT_CONNECTION must include username and password");
                 }
                 String user = userInfo.substring(0, index);
-                String password = userInfo.substring(index + 1);
+                String pass = userInfo.substring(index + 1);
                 int port = uri.getPort() > 0 ? uri.getPort() : 5432;
                 StringBuilder jdbc = new StringBuilder("jdbc:postgresql://")
                         .append(uri.getHost())
@@ -97,7 +105,7 @@ class TenantForgeApplicationTests {
                 } else {
                     jdbc.append("?").append(query).append("&sslmode=require");
                 }
-                return Optional.of(new RemoteDbConfig(jdbc.toString(), user, password));
+                return Optional.of(new RemoteDbConfig(jdbc.toString(), user, pass));
             } catch (URISyntaxException e) {
                 throw new IllegalArgumentException("DIRECT_CONNECTION has invalid format", e);
             }
@@ -113,6 +121,10 @@ class TenantForgeApplicationTests {
 
         String password() {
             return password;
+        }
+
+        private static boolean hasText(String value) {
+            return value != null && !value.isBlank();
         }
     }
 }

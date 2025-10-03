@@ -5,6 +5,10 @@ on:
     branches: [ main, feat/backend-scaffold ]
   pull_request:
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -83,7 +87,7 @@ jobs:
             IMAGE_TAG="ghcr.io/${{ github.repository_owner }}/tenantforge-backend:${{ github.sha }}"
           fi
 
-          HEALTH_OPTS=("--checks" "8080:http:/api/health" "--checks-grace-period" "8080=30")
+          HEALTH_OPTS=("--checks" "8080:http:/api/health" "--checks-grace-period" "8080=90")
 
           if ! koyeb services get "$SERVICE_REF" --token "$KOYEB_API_KEY" >/dev/null 2>&1; then
             koyeb services create "$KOYEB_SERVICE_NAME" \

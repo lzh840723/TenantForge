@@ -58,7 +58,7 @@ if ! koyeb apps get "$APP_NAME" --token "$KOYEB_API_KEY" >/dev/null 2>&1; then
   koyeb apps create "$APP_NAME" --token "$KOYEB_API_KEY"
 fi
 
-HEALTH_OPTS=(--checks 8080:http:/api/health --checks-grace-period 8080=30)
+HEALTH_OPTS=(--checks 8080:http:/api/health --checks-grace-period 8080=90)
 SERVICE_REF="$APP_NAME/$SERVICE_NAME"
 
 if ! koyeb services get "$SERVICE_REF" --token "$KOYEB_API_KEY" >/dev/null 2>&1; then

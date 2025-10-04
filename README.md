@@ -10,6 +10,8 @@ Multi-tenant project & time tracking starter kit built with Spring Boot, Postgre
 ## Docs
 - Postman collection: `docs/postman/TenantForge.postman_collection.json`
 - Demo script: `docs/demo_script.md`
+- Status dashboard: `docs/status/status.md` (JSON/board/burndown in same folder)
+- Changes log: `changes/`
 
 ## Prerequisites
 - Java 21

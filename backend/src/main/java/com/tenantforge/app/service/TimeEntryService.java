@@ -8,6 +8,7 @@ import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,8 +19,8 @@ public class TimeEntryService {
 
     public TimeEntryService(TimeEntryRepository entries) { this.entries = entries; }
 
-    public Page<TimeEntry> list(Instant start, Instant end, int page, int size){
-        var pageable = PageRequest.of(page, size);
+    public Page<TimeEntry> list(Instant start, Instant end, int page, int size, Sort sort){
+        var pageable = PageRequest.of(page, size, sort);
         if (start != null && end != null) return entries.findAllByDeletedAtIsNullAndStartedAtBetween(start, end, pageable);
         return entries.findAllByDeletedAtIsNull(pageable);
     }
@@ -41,4 +42,3 @@ public class TimeEntryService {
     @Transactional
     public boolean softDelete(UUID id){ return find(id).map(e -> { e.setDeletedAt(Instant.now()); return true;}).orElse(false); }
 }
-

@@ -2,10 +2,12 @@ package com.tenantforge.app.web;
 
 import com.tenantforge.app.domain.TimeEntry;
 import com.tenantforge.app.service.TimeEntryService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.NotNull;
 import java.time.Instant;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -13,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/time-entries")
+@Tag(name = "TimeEntries")
 @Validated
 public class TimeEntryController {
 
@@ -31,8 +34,11 @@ public class TimeEntryController {
                     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
                     Instant end,
             @RequestParam(value = "page", defaultValue = "0") int page,
-            @RequestParam(value = "size", defaultValue = "20") int size) {
-        return service.list(start, end, page, size);
+            @RequestParam(value = "size", defaultValue = "20") int size,
+            @RequestParam(value = "sort", defaultValue = "startedAt") String sort,
+            @RequestParam(value = "order", defaultValue = "desc") String order) {
+        Sort.Direction dir = "asc".equalsIgnoreCase(order) ? Sort.Direction.ASC : Sort.Direction.DESC;
+        return service.list(start, end, page, size, Sort.by(dir, sort));
     }
 
     @PostMapping
@@ -67,4 +73,3 @@ public class TimeEntryController {
 
     public record UpdateRequest(@NotNull Instant startedAt, @NotNull Instant endedAt, String notes) {}
 }
-

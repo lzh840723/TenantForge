@@ -4,13 +4,16 @@ import com.tenantforge.app.domain.Project;
 import com.tenantforge.app.service.ProjectService;
 import jakarta.validation.constraints.NotBlank;
 import java.util.UUID;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/projects")
+@Tag(name = "Projects")
 @Validated
 public class ProjectController {
 
@@ -20,8 +23,11 @@ public class ProjectController {
     @GetMapping
     public Page<Project> list(@RequestParam(value = "q", required = false) String q,
                               @RequestParam(value = "page", defaultValue = "0") int page,
-                              @RequestParam(value = "size", defaultValue = "20") int size){
-        return service.list(q, page, size);
+                              @RequestParam(value = "size", defaultValue = "20") int size,
+                              @RequestParam(value = "sort", defaultValue = "createdAt") String sort,
+                              @RequestParam(value = "order", defaultValue = "desc") String order){
+        Sort.Direction dir = "asc".equalsIgnoreCase(order) ? Sort.Direction.ASC : Sort.Direction.DESC;
+        return service.list(q, page, size, Sort.by(dir, sort));
     }
 
     @PostMapping
@@ -48,4 +54,3 @@ public class ProjectController {
     public record CreateRequest(@NotBlank String name, String description){}
     public record UpdateRequest(@NotBlank String name, String description){}
 }
-

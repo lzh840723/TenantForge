@@ -8,6 +8,7 @@ import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,8 +19,8 @@ public class TaskService {
 
     public TaskService(TaskRepository tasks) { this.tasks = tasks; }
 
-    public Page<Task> list(String q, int page, int size) {
-        var pageable = PageRequest.of(page, size);
+    public Page<Task> list(String q, int page, int size, Sort sort) {
+        var pageable = PageRequest.of(page, size, sort);
         if (q != null && !q.isBlank()) return tasks.findAllByDeletedAtIsNullAndNameContainingIgnoreCase(q, pageable);
         return tasks.findAllByDeletedAtIsNull(pageable);
     }
@@ -40,4 +41,3 @@ public class TaskService {
     @Transactional
     public boolean softDelete(UUID id){ return find(id).map(t -> { t.setDeletedAt(Instant.now()); return true;}).orElse(false); }
 }
-

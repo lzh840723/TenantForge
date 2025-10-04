@@ -2,15 +2,18 @@ package com.tenantforge.app.web;
 
 import com.tenantforge.app.domain.Task;
 import com.tenantforge.app.service.TaskService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.NotBlank;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/tasks")
+@Tag(name = "Tasks")
 @Validated
 public class TaskController {
 
@@ -21,8 +24,11 @@ public class TaskController {
     @GetMapping
     public Page<Task> list(@RequestParam(value = "q", required = false) String q,
                            @RequestParam(value = "page", defaultValue = "0") int page,
-                           @RequestParam(value = "size", defaultValue = "20") int size){
-        return service.list(q, page, size);
+                           @RequestParam(value = "size", defaultValue = "20") int size,
+                           @RequestParam(value = "sort", defaultValue = "createdAt") String sort,
+                           @RequestParam(value = "order", defaultValue = "desc") String order){
+        Sort.Direction dir = "asc".equalsIgnoreCase(order) ? Sort.Direction.ASC : Sort.Direction.DESC;
+        return service.list(q, page, size, Sort.by(dir, sort));
     }
 
     @PostMapping
@@ -48,4 +54,3 @@ public class TaskController {
     public record CreateRequest(UUID projectId, @NotBlank String name){}
     public record UpdateRequest(@NotBlank String name, @NotBlank String status){}
 }
-

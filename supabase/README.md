@@ -27,6 +27,6 @@
    export SPRING_DATASOURCE_USERNAME="<pooler-username>"
    export SPRING_DATASOURCE_PASSWORD="<pooler-password>"
    ```
-6. Store connection strings as secrets:
-   - Koyeb: `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, `SPRING_DATASOURCE_PASSWORD`
-   - GitHub Actions (for CI): same as above.
+6. Store the connection strings as service/environment variables:
+   - Railway: `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, `SPRING_DATASOURCE_PASSWORD`, `JWT_SECRET`
+   - GitHub Actions (for CI): mirror the same variables.

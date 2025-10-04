@@ -4,14 +4,14 @@ Multi-tenant project & time tracking starter kit built with Spring Boot, Postgre
 
 - A Spring Boot backend skeleton ready for multi-tenant features.
 - Supabase SQL scripts to enable row-level security.
-- Deployment scripts for Koyeb (API) and Vercel (static site).
+- Deployment playbooks for Railway (API) and Vercel (static site).
 - Optional local Docker Compose stack for development parity.
 
 ## Prerequisites
 - Java 21
 - Maven 3.9+
 - Supabase account (with database + connection pool enabled)
-- Koyeb CLI (`brew install koyeb/tap/koyeb`)
+- Railway CLI (`brew install railway`)
 - Vercel CLI (`npm i -g vercel`)
 - Docker (only if you want to run the compose stack locally)
 
@@ -25,11 +25,10 @@ set +a
 ```
 
 Common variables:
-- `KOYEB_API_KEY`
 - `DIRECT_CONNECTION` – Supabase direct URL, used for migrations (requires `sslmode=require`)
 - `TRANSACTION_POOLER` – Supabase pooled URL, used by the application/runtime
+- `RENDER_API_KEY`
 - `VERCEL_TOKEN`
-- `GHCR_USERNAME`, `GHCR_TOKEN` (for pushing Docker images)
 
 Derived runtime variables (pointing at the pooler):
 - `SPRING_DATASOURCE_URL`
@@ -58,19 +57,30 @@ psql "$DIRECT_CONNECTION" -f backend/src/main/resources/db/migration/V1__init_sc
 psql "$DIRECT_CONNECTION" -f supabase/010_enable_rls.sql
 ```
 
-## Deploy to Koyeb
+## Deploy to Railway
+
+Railway can build a Spring Boot service directly from this repository. Prepare the CLI with the required IDs and token listed in `local_notes/.env`:
 
 ```bash
-export SPRING_DATASOURCE_URL="$TRANSACTION_POOLER" # converted to JDBC inside the script
-export SPRING_DATASOURCE_USERNAME="<pooler-username>"
-export SPRING_DATASOURCE_PASSWORD="<pooler-password>"
-export GHCR_USERNAME="<your-ghcr-username>"
-export GHCR_TOKEN="<github-personal-access-token>"
+set -a
+source local_notes/.env
+set +a
 
-./scripts/koyeb-deploy.sh
+# The script reads the following variables (IDs preferred for stability):
+export RAILWAY_TOKEN="$RAILWAY_TOKEN"            # Project access token
+export RAILWAY_PROJECT_ID="e89e8ca8-88c1-4734-ad72-6f98730abc01"
+export RAILWAY_ENVIRONMENT_ID="fa80cd3a-0a22-488b-8e2a-8d98e668568c"
+export RAILWAY_SERVICE_ID="dd4fb1ea-c9f4-40b8-b303-30d0fd65faa0"
+
+./scripts/railway-deploy.sh
 ```
 
-The script logs in with your token, builds the Docker image, pushes to GHCR, and triggers a rolling deploy on Koyeb.
+What the helper script does:
+- Validates the Supabase and JWT secrets and writes a temporary `.railway/config.json` with the IDs above.
+- Synchronises the required environment variables via `railway variables --skip-deploys` so the service picks up the latest database credentials and JWT secret.
+- Runs `mvn -B -DskipTests package` to produce the fat JAR and calls `railway up --ci` to trigger a deploy.
+
+To inspect the build/deploy logs afterwards, run `railway logs --service TenantForge --environment production`. Update the IDs in `.env` if you create a new Railway project or environment.
 
 ## Deploy Static Site to Vercel
 

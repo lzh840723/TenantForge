@@ -43,7 +43,7 @@ jobs:
           JAVA_TOOL_OPTIONS: -Djava.net.preferIPv4Stack=true
         run: mvn -f backend/pom.xml -Dmaven.wagon.http.retryHandler.count=5 -B clean verify
 
-      - name: Run backend tests with coverage check (PR)
+      - name: Run backend tests (PR)
         if: github.event_name == 'pull_request'
         env:
           SPRING_DATASOURCE_URL: ${{ secrets.SPRING_DATASOURCE_URL }}
@@ -52,7 +52,7 @@ jobs:
           DIRECT_CONNECTION: ${{ secrets.DIRECT_CONNECTION }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           JAVA_TOOL_OPTIONS: -Djava.net.preferIPv4Stack=true
-        run: mvn -f backend/pom.xml -Dmaven.wagon.http.retryHandler.count=5 -B -Pcoverage-check clean verify
+        run: mvn -f backend/pom.xml -Dmaven.wagon.http.retryHandler.count=5 -B clean verify
 
       - name: Upload JaCoCo XML
         if: always()

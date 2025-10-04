@@ -10,3 +10,5 @@
 ## Docs & Assets
 - Postman 集合：`docs/postman/TenantForge.postman_collection.json`
 - 演示脚本：`docs/demo_script.md`
+- 架构文档：`docs/architecture.md`
+- API 快速上手：`docs/api_quickstart.md`

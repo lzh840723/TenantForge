@@ -23,12 +23,14 @@ public class TaskController {
 
     @GetMapping
     public Page<Task> list(@RequestParam(value = "q", required = false) String q,
+                           @RequestParam(value = "projectId", required = false) UUID projectId,
+                           @RequestParam(value = "status", required = false) String status,
                            @RequestParam(value = "page", defaultValue = "0") int page,
                            @RequestParam(value = "size", defaultValue = "20") int size,
                            @RequestParam(value = "sort", defaultValue = "createdAt") String sort,
                            @RequestParam(value = "order", defaultValue = "desc") String order){
         Sort.Direction dir = "asc".equalsIgnoreCase(order) ? Sort.Direction.ASC : Sort.Direction.DESC;
-        return service.list(q, page, size, Sort.by(dir, sort));
+        return service.list(q, projectId, status, page, size, Sort.by(dir, sort));
     }
 
     @PostMapping

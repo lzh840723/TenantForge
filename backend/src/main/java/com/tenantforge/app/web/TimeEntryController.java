@@ -33,12 +33,14 @@ public class TimeEntryController {
             @RequestParam(value = "end", required = false)
                     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
                     Instant end,
+            @RequestParam(value = "taskId", required = false) UUID taskId,
+            @RequestParam(value = "userId", required = false) UUID userId,
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "20") int size,
             @RequestParam(value = "sort", defaultValue = "startedAt") String sort,
             @RequestParam(value = "order", defaultValue = "desc") String order) {
         Sort.Direction dir = "asc".equalsIgnoreCase(order) ? Sort.Direction.ASC : Sort.Direction.DESC;
-        return service.list(start, end, page, size, Sort.by(dir, sort));
+        return service.list(start, end, taskId, userId, page, size, Sort.by(dir, sort));
     }
 
     @PostMapping

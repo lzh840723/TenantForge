@@ -6,11 +6,12 @@ import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import java.util.List;
 
-public interface TimeEntryRepository extends JpaRepository<TimeEntry, UUID> {
+public interface TimeEntryRepository extends JpaRepository<TimeEntry, UUID>, JpaSpecificationExecutor<TimeEntry> {
     Page<TimeEntry> findAllByDeletedAtIsNullAndStartedAtBetween(Instant start, Instant end, Pageable pageable);
     Page<TimeEntry> findAllByDeletedAtIsNull(Pageable pageable);
 

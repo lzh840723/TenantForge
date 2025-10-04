@@ -9,6 +9,7 @@ import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,10 +20,19 @@ public class TaskService {
 
     public TaskService(TaskRepository tasks) { this.tasks = tasks; }
 
-    public Page<Task> list(String q, int page, int size, Sort sort) {
+    public Page<Task> list(String q, UUID projectId, String status, int page, int size, Sort sort) {
         var pageable = PageRequest.of(page, size, sort);
-        if (q != null && !q.isBlank()) return tasks.findAllByDeletedAtIsNullAndNameContainingIgnoreCase(q, pageable);
-        return tasks.findAllByDeletedAtIsNull(pageable);
+        Specification<Task> spec = (root, query, cb) -> cb.isNull(root.get("deletedAt"));
+        if (q != null && !q.isBlank()) {
+            spec = spec.and((root, query, cb) -> cb.like(cb.lower(root.get("name")), "%" + q.toLowerCase() + "%"));
+        }
+        if (projectId != null) {
+            spec = spec.and((root, query, cb) -> cb.equal(root.get("projectId"), projectId));
+        }
+        if (status != null && !status.isBlank()) {
+            spec = spec.and((root, query, cb) -> cb.equal(root.get("status"), status));
+        }
+        return tasks.findAll(spec, pageable);
     }
 
     @Transactional

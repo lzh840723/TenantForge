@@ -5,10 +5,10 @@
     "3.4": "done",
     "3.5": "done",
     "3.6": {
-      "sql_views_api": "in_progress",
+      "sql_views_api": "done",
       "api_export": "done",
-      "perf_baseline": "in_progress",
-      "evidence": "pending"
+      "perf_baseline": "done",
+      "evidence": "done"
     },
     "3.7": "done",
     "3.8": {
@@ -17,7 +17,7 @@
       "coverage_gates": "in_progress"
     },
     "3.9": {
-      "readme_arch_api": "in_progress",
+      "readme_arch_api": "done",
       "reports_assets": "done",
       "demo_recording": "pending"
     },
@@ -40,4 +40,3 @@
   },
   "updated_at": "${date}"
 }
-

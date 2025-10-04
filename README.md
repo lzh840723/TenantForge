@@ -7,6 +7,10 @@ Multi-tenant project & time tracking starter kit built with Spring Boot, Postgre
 - Deployment playbooks for Railway (API) and Vercel (static site).
 - Optional local Docker Compose stack for development parity.
 
+## Docs
+- Postman collection: `docs/postman/TenantForge.postman_collection.json`
+- Demo script: `docs/demo_script.md`
+
 ## Prerequisites
 - Java 21
 - Maven 3.9+
@@ -110,6 +114,11 @@ docker compose up --build
 curl http://localhost:8080/api/health
 ```
 
+## PG IT (Evidence)
+- A manual workflow is provided to run Postgres-backed integration tests and upload artifacts (EXPLAIN plan, view aggregation sample).
+- Trigger via GitHub Actions: "PG Integration Evidence" → Run workflow.
+- Artifacts: `pg-it-evidence` (includes `backend/target/artifacts/**`).
+
 ## Project Structure
 ```
 backend/                 Spring Boot service
@@ -118,6 +127,7 @@ backend/                 Spring Boot service
   └── src/
 frontend/                Static landing page for Vercel
 supabase/                SQL scripts for RLS policies
+docs/                    Postman collection and demo script
 scripts/                 Deployment helpers
 local_notes/             Internal playbooks (.env stored here)
 ```

@@ -39,7 +39,7 @@
       if(r.ok){ localStorage.setItem('accessToken', r.data.accessToken); }
     }
     async function onLogin(){
-      const email = document.getElementById('email').').value;
+      const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
       const r = await req('/api/auth/login','POST',{email,password});
       show('loginOut', r);

@@ -5,25 +5,90 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>TenantForge SaaS Starter</title>
   <link rel="stylesheet" href="styles.css" />
+  <style>
+    .container{max-width:760px;margin:40px auto;padding:0 16px}
+    .row{margin:12px 0}
+    input,button{padding:8px 10px}
+    input{width:100%;box-sizing:border-box}
+    code{background:#f5f5f5;padding:2px 4px;border-radius:3px}
+    .muted{color:#666}
+    .ok{color:green}
+    .err{color:#b00}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    pre{background:#f7f7f7;padding:8px;overflow:auto}
+  </style>
+  <script>
+    const defaultBase = 'http://localhost:8080';
+    function getBase(){ return localStorage.getItem('backendBaseUrl') || defaultBase; }
+    function setBase(v){ localStorage.setItem('backendBaseUrl', v); }
+    async function req(path, method='GET', body=null, token=null){
+      const headers = {'Content-Type':'application/json'};
+      if(token){ headers['Authorization'] = 'Bearer '+token; }
+      const resp = await fetch(getBase()+path, {method, headers, body: body?JSON.stringify(body):null});
+      const text = await resp.text();
+      let data; try{ data = JSON.parse(text); } catch(e){ data = text; }
+      return {ok: resp.ok, status: resp.status, data};
+    }
+    async function onRegister(){
+      const tenantName = document.getElementById('tenantName').value;
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const displayName = document.getElementById('displayName').value;
+      const r = await req('/api/auth/register','POST',{tenantName,email,password,displayName});
+      show('registerOut', r);
+      if(r.ok){ localStorage.setItem('accessToken', r.data.accessToken); }
+    }
+    async function onLogin(){
+      const email = document.getElementById('email').').value;
+      const password = document.getElementById('password').value;
+      const r = await req('/api/auth/login','POST',{email,password});
+      show('loginOut', r);
+      if(r.ok){ localStorage.setItem('accessToken', r.data.accessToken); }
+    }
+    async function onProjects(){
+      const token = localStorage.getItem('accessToken');
+      const r = await req('/api/projects','GET',null, token);
+      show('projectsOut', r);
+    }
+    function onBase(){ const v = document.getElementById('base').value; setBase(v); document.getElementById('baseNow').textContent=getBase(); }
+    function show(id, r){
+      const el = document.getElementById(id);
+      el.className = r.ok? 'ok' : 'err';
+      el.textContent = 'HTTP '+r.status+'\n'+ (typeof r.data==='string'? r.data : JSON.stringify(r.data,null,2));
+    }
+    window.addEventListener('DOMContentLoaded', ()=>{ document.getElementById('baseNow').textContent=getBase(); });
+  </script>
 </head>
 <body>
-  <main>
+  <main class="container">
     <h1>TenantForge SaaS Starter</h1>
-    <p>This deployment showcases the multi-tenant project &amp; time tracking backend API.</p>
+    <p class="muted">Set your backend base URL then register/login below. Current base: <code id="baseNow"></code></p>
+    <div class="row grid">
+      <input id="base" placeholder="Backend Base URL (e.g. https://xxx.up.railway.app)">
+      <button onclick="onBase()">Save Base URL</button>
+    </div>
     <section>
-      <h2>Key Endpoints</h2>
-      <ul>
-        <li><code>/api/health</code> — application health probe</li>
-        <li><code>/swagger-ui/index.html</code> — interactive API documentation</li>
-        <li><code>/actuator/health</code> — Spring Boot health endpoint</li>
-      </ul>
+      <h2>Register</h2>
+      <div class="row grid">
+        <input id="tenantName" placeholder="Tenant Name" value="demo-tenant">
+        <input id="displayName" placeholder="Display Name" value="Demo Owner">
+      </div>
+      <div class="row grid">
+        <input id="email" placeholder="Email" value="demo@tenantforge.dev">
+        <input id="password" placeholder="Password" type="password" value="Password123!">
+      </div>
+      <div class="row"><button onclick="onRegister()">Register</button></div>
+      <pre id="registerOut"></pre>
     </section>
     <section>
-      <h2>Resources</h2>
-      <ul>
-        <li><a href="https://github.com" target="_blank" rel="noopener">Source Repository</a></li>
-        <li><a href="/docs" target="_blank" rel="noopener">Project Documentation</a></li>
-      </ul>
+      <h2>Login</h2>
+      <div class="row"><button onclick="onLogin()">Login</button></div>
+      <pre id="loginOut"></pre>
+    </section>
+    <section>
+      <h2>Projects</h2>
+      <div class="row"><button onclick="onProjects()">List Projects</button></div>
+      <pre id="projectsOut"></pre>
     </section>
   </main>
 </body>

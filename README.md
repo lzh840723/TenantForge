@@ -12,6 +12,11 @@ Multi-tenant project & time tracking starter kit built with Spring Boot, Postgre
 - Demo script: `docs/demo_script.md`
 - Status dashboard: `docs/status/status.md` (JSON/board/burndown in same folder)
 - Changes log: `changes/`
+- Architecture: `docs/architecture.md`
+
+## API
+- Swagger UI: `/swagger-ui/index.html`
+- OpenAPI JSON: `/v3/api-docs`
 
 ## Prerequisites
 - Java 21

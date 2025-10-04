@@ -49,6 +49,12 @@ class PerformancePlanIT {
             st.execute("insert into time_entries(id,tenant_id,task_id,user_id,started_at,ended_at,notes) values ('"+UUID.randomUUID()+"','"+tenant+"','"+task+"','"+user+"','"+s+"','"+e+"','n')");
 
             String explain = single(st, "EXPLAIN SELECT * FROM time_entries WHERE user_id='"+user+"' AND started_at BETWEEN TIMESTAMP '2024-01-01 00:00:00+00' AND TIMESTAMP '2024-01-02 23:59:59+00'");
+            // persist explain plan for CI artifact evidence
+            try {
+                Files.createDirectories(Path.of("target/artifacts"));
+                Files.writeString(Path.of("target/artifacts/explain-time-entries.txt"), explain);
+            } catch (Exception ignore) {}
+            System.out.println("\n==== EXPLAIN (time_entries by user + range) ====" + "\n" + explain + "=============================================\n");
             // Expect planner to consider an index; vendor may choose bitmap or direct index scan
             boolean usesIndex = explain.contains("Index Scan") || explain.contains("Bitmap Index");
             assertThat(usesIndex).isTrue();
@@ -72,4 +78,3 @@ class PerformancePlanIT {
         }
     }
 }
-

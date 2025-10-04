@@ -62,6 +62,21 @@ jobs:
           path: backend/target/site/jacoco/jacoco.xml
           if-no-files-found: warn
 
+      - name: Run Postgres integration tests (RUN_PG_IT)
+        if: github.event_name == 'pull_request'
+        env:
+          RUN_PG_IT: true
+          JAVA_TOOL_OPTIONS: -Djava.net.preferIPv4Stack=true
+        run: mvn -f backend/pom.xml -B verify
+
+      - name: Upload performance artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: perf-artifacts
+          path: backend/target/artifacts/
+          if-no-files-found: ignore
+
       - name: Setup Python for diff coverage
         if: github.event_name == 'pull_request'
         uses: actions/setup-python@v5

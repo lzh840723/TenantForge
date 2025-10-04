@@ -2,6 +2,7 @@ package com.tenantforge.app.security;
 
 import com.tenantforge.app.domain.AppUser;
 import com.tenantforge.app.repository.AppUserRepository;
+import com.tenantforge.app.tenant.TenantContextHolder;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -32,6 +33,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
+        TenantContextHolder.clear();
+
         String header = request.getHeader("Authorization");
         if (!StringUtils.hasText(header) || !header.startsWith("Bearer ")) {
             chain.doFilter(request, response);
@@ -41,29 +44,32 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String token = header.substring(7);
         try {
             Claims claims = jwtService.parse(token);
-            if (!"access".equals(jwtService.tokenType(claims))) {
-                chain.doFilter(request, response);
-                return;
+            if ("access".equals(jwtService.tokenType(claims))) {
+                UUID userId = jwtService.extractUserId(claims);
+                Optional<AppUser> userOptional = userRepository.findById(userId).filter(u -> !u.isDeleted());
+                if (userOptional.isPresent()) {
+                    AppUser user = userOptional.get();
+                    TenantContextHolder.setTenantId(user.getTenant().getId());
+                    UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                            user,
+                            null,
+                            java.util.List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name())));
+                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                } else {
+                    SecurityContextHolder.clearContext();
+                }
+            } else {
+                SecurityContextHolder.clearContext();
             }
-
-            UUID userId = jwtService.extractUserId(claims);
-            Optional<AppUser> userOptional = userRepository.findById(userId).filter(u -> !u.isDeleted());
-            if (userOptional.isEmpty()) {
-                chain.doFilter(request, response);
-                return;
-            }
-
-            AppUser user = userOptional.get();
-            UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                    user,
-                    null,
-                    java.util.List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name())));
-            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-            SecurityContextHolder.getContext().setAuthentication(authentication);
         } catch (Exception ex) {
             SecurityContextHolder.clearContext();
         }
 
-        chain.doFilter(request, response);
+        try {
+            chain.doFilter(request, response);
+        } finally {
+            TenantContextHolder.clear();
+        }
     }
 }

@@ -32,7 +32,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-m2-
 
-      - name: Run backend tests
+      - name: Run backend tests (push)
+        if: github.event_name != 'pull_request'
         env:
           SPRING_DATASOURCE_URL: ${{ secrets.SPRING_DATASOURCE_URL }}
           SPRING_DATASOURCE_USERNAME: ${{ secrets.SPRING_DATASOURCE_USERNAME }}
@@ -41,6 +42,43 @@ jobs:
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           JAVA_TOOL_OPTIONS: -Djava.net.preferIPv4Stack=true
         run: mvn -f backend/pom.xml -Dmaven.wagon.http.retryHandler.count=5 -B clean verify
+
+      - name: Run backend tests with coverage check (PR)
+        if: github.event_name == 'pull_request'
+        env:
+          SPRING_DATASOURCE_URL: ${{ secrets.SPRING_DATASOURCE_URL }}
+          SPRING_DATASOURCE_USERNAME: ${{ secrets.SPRING_DATASOURCE_USERNAME }}
+          SPRING_DATASOURCE_PASSWORD: ${{ secrets.SPRING_DATASOURCE_PASSWORD }}
+          DIRECT_CONNECTION: ${{ secrets.DIRECT_CONNECTION }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          JAVA_TOOL_OPTIONS: -Djava.net.preferIPv4Stack=true
+        run: mvn -f backend/pom.xml -Dmaven.wagon.http.retryHandler.count=5 -B -Pcoverage-check clean verify
+
+      - name: Upload JaCoCo XML
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-xml-backend
+          path: backend/target/site/jacoco/jacoco.xml
+          if-no-files-found: warn
+
+      - name: Setup Python for diff coverage
+        if: github.event_name == 'pull_request'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install diff-cover
+        if: github.event_name == 'pull_request'
+        run: pip install --no-cache-dir diff-cover
+
+      - name: Diff coverage (fail under 90%)
+        if: github.event_name == 'pull_request'
+        run: |
+          git fetch --no-tags --prune --depth=1 origin "${{ github.base_ref }}"
+          diff-cover backend/target/site/jacoco/jacoco.xml \
+            --compare-branch "origin/${{ github.base_ref }}" \
+            --fail-under=90
 
   deploy-backend:
     runs-on: ubuntu-latest

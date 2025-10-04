@@ -35,8 +35,23 @@ public class TenantAwareDataSource extends AbstractDataSource {
     }
 
     private Connection prepare(Connection connection) throws SQLException {
-        applyTenant(connection, TenantContextHolder.getTenantId());
-        return wrap(connection);
+        if (isPostgres(connection)) {
+            applyTenant(connection, TenantContextHolder.getTenantId());
+            return wrap(connection);
+        }
+        // Non-Postgres (e.g., H2 in tests): skip session GUC, return raw connection
+        return connection;
+    }
+
+    private static boolean isPostgres(Connection connection) {
+        try {
+            var meta = connection.getMetaData();
+            if (meta == null) return false;
+            String product = meta.getDatabaseProductName();
+            return product != null && product.toLowerCase().contains("postgres");
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     private static void applyTenant(Connection connection, Optional<UUID> tenantId) throws SQLException {
@@ -68,7 +83,9 @@ public class TenantAwareDataSource extends AbstractDataSource {
         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
             if ("close".equals(method.getName())) {
                 try {
-                    resetTenant(delegate);
+                    if (isPostgres(delegate)) {
+                        resetTenant(delegate);
+                    }
                 } finally {
                     return method.invoke(delegate, args);
                 }

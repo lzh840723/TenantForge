@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
 import java.util.UUID;
@@ -29,6 +30,9 @@ class TenantAwareDataSourceTest {
         TenantContextHolder.setTenantId(tenantId);
 
         when(delegate.getConnection()).thenReturn(connection);
+        DatabaseMetaData meta = mock(DatabaseMetaData.class);
+        when(connection.getMetaData()).thenReturn(meta);
+        when(meta.getDatabaseProductName()).thenReturn("PostgreSQL");
         when(connection.prepareStatement("select set_config('app.tenant_id', ?, false)"))
                 .thenReturn(setConfigStatement);
         when(connection.createStatement()).thenReturn(resetStatement);
@@ -48,6 +52,9 @@ class TenantAwareDataSourceTest {
     @Test
     void skipsTenantBindingWhenContextMissing() throws Exception {
         when(delegate.getConnection()).thenReturn(connection);
+        DatabaseMetaData meta = mock(DatabaseMetaData.class);
+        when(connection.getMetaData()).thenReturn(meta);
+        when(meta.getDatabaseProductName()).thenReturn("PostgreSQL");
         when(connection.createStatement()).thenReturn(resetStatement);
 
         try (Connection wrapped = new TenantAwareDataSource(delegate).getConnection()) {

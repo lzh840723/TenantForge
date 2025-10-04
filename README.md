@@ -144,3 +144,9 @@ local_notes/             Internal playbooks (.env stored here)
 - Implement authentication, RBAC, and tenant context interceptors.
 - Add integration tests that validate RLS behaviour and audit logging.
 - Build CI/CD pipelines (GitHub Actions) to automate build + deploy.
+## Makefile
+- Format: `make format`
+- Lint: `make lint`
+- Typecheck: `make typecheck`
+- Test (unit only): `make test`
+- Integration tests (requires Docker): `make test-integration`

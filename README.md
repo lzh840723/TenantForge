@@ -87,6 +87,7 @@ To inspect the build/deploy logs afterwards, run `railway logs --service TenantF
 - Console logs now include `tenant=<UUID>` thanks to the request-scoped MDC binding. This makes it easy to filter multi租 tenant output when using Railway logs or other collectors.
 - Railway captures streaming logs by default; use `railway logs --service TenantForge --environment production --tail` for a live feed during incidents.
 - If you need structured logs for external systems, point the service at a Log Drain in the Railway dashboard—no application changes required because we emit to stdout.
+- Prometheus metrics are available at `/actuator/prometheus`; Railway can scrape them directly or pipe them to Grafana Cloud via observability integrations.
 
 ## Deploy Static Site to Vercel
 

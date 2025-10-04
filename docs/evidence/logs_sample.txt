@@ -1,0 +1,3 @@
+2025-10-04T12:34:56.789Z INFO  com.tenantforge.app.TenantForgeApplication - Starting TenantForgeApplication using Java 21
+2025-10-04T12:34:57.012Z INFO  org.springframework.security - Security filter chain initialized
+2025-10-04T12:34:57.345Z INFO  com.tenantforge.app.tenant.TenantLoggingFilter tenant=3f3d2f12-2b6f-4c2e-bb27-94f2b8b2e123 - request processed

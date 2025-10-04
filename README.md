@@ -14,6 +14,8 @@ Multi-tenant project & time tracking starter kit built with Spring Boot, Postgre
 - Changes log: `changes/`
 - Architecture: `docs/architecture.md`
 - API Quickstart: `docs/api_quickstart.md`
+- Evidence: `docs/evidence/` (reports, coverage, PG IT)
+- Demo assets: `docs/demo/`
 
 ## API
 - Swagger UI: `/swagger-ui/index.html`

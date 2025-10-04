@@ -40,7 +40,7 @@ public class ReportController {
             String csv = toCsv(rows);
             return ResponseEntity.ok()
                     .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=report-" + p + ".csv")
-                    .contentType(new MediaType("text", "csv", StandardCharsets.UTF_8))
+                    .header(HttpHeaders.CONTENT_TYPE, "text/csv; charset=UTF-8")
                     .body(csv);
         }
         return ResponseEntity.ok(rows);
@@ -71,4 +71,3 @@ public class ReportController {
         return sb.toString();
     }
 }
-

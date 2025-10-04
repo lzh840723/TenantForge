@@ -22,11 +22,18 @@ import org.springframework.test.context.DynamicPropertySource;
 @ActiveProfiles("test")
 class TenantForgeApplicationTests {
 
-    private static final Optional<RemoteDbConfig> REMOTE_DB = RemoteDbConfig.fromEnv();
+    private static final boolean RUN_REMOTE_IT =
+            Optional.ofNullable(System.getenv("RUN_REMOTE_IT"))
+                    .map(String::toLowerCase)
+                    .map(v -> v.equals("1") || v.equals("true") || v.equals("yes"))
+                    .orElse(false);
+
+    private static final Optional<RemoteDbConfig> REMOTE_DB = RUN_REMOTE_IT ? RemoteDbConfig.fromEnv() : Optional.empty();
 
     @BeforeAll
     static void checkRemoteConfig() {
-        assumeTrue(REMOTE_DB.isPresent(), () -> "Set DIRECT_CONNECTION env variable before running tests");
+        assumeTrue(RUN_REMOTE_IT, () -> "Skip remote integration tests (set RUN_REMOTE_IT=true to enable)");
+        assumeTrue(REMOTE_DB.isPresent(), () -> "Set DIRECT_CONNECTION or SPRING_DATASOURCE_* env to enable remote IT");
     }
 
     @DynamicPropertySource

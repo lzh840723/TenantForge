@@ -82,6 +82,12 @@ What the helper script does:
 
 To inspect the build/deploy logs afterwards, run `railway logs --service TenantForge --environment production`. Update the IDs in `.env` if you create a new Railway project or environment.
 
+## Operations Notes
+
+- Console logs now include `tenant=<UUID>` thanks to the request-scoped MDC binding. This makes it easy to filter multi租 tenant output when using Railway logs or other collectors.
+- Railway captures streaming logs by default; use `railway logs --service TenantForge --environment production --tail` for a live feed during incidents.
+- If you need structured logs for external systems, point the service at a Log Drain in the Railway dashboard—no application changes required because we emit to stdout.
+
 ## Deploy Static Site to Vercel
 
 ```bash

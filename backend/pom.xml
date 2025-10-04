@@ -199,8 +199,8 @@
                 <configuration>
                     <includes>
                         <include>**/tenant/*IntegrationTest.java</include>
-                        <include>**/perf/*IT.java</include>
-                        <include>**/report/*IT.java</include>
+                        <include>**/perf/PerformancePlanIT.java</include>
+                        <include>**/report/ReportViewsIT.java</include>
                     </includes>
                 </configuration>
                 <executions>

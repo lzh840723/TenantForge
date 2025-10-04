@@ -2,6 +2,9 @@ name: PG Integration Evidence
 
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - '.github/pg-it.trigger'
 
 jobs:
   pg-it:
@@ -33,4 +36,3 @@ jobs:
             backend/target/artifacts/**
             backend/target/failsafe-reports/**
           if-no-files-found: warn
-

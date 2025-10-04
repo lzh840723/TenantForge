@@ -2,6 +2,7 @@ package com.tenantforge.app.web;
 
 import com.tenantforge.app.domain.Project;
 import com.tenantforge.app.service.ProjectService;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import java.util.UUID;
 import io.swagger.v3.oas.annotations.Operation;
@@ -40,7 +41,7 @@ public class ProjectController {
 
     @PostMapping
     @Operation(summary = "Create a project")
-    public Project create(@RequestBody CreateRequest req){
+    public Project create(@RequestBody @Valid CreateRequest req){
         return service.create(req.name, req.description);
     }
 
@@ -52,7 +53,7 @@ public class ProjectController {
 
     @PutMapping("/{id}")
     @Operation(summary = "Update project")
-    public ResponseEntity<Project> update(@PathVariable UUID id, @RequestBody UpdateRequest req){
+    public ResponseEntity<Project> update(@PathVariable UUID id, @RequestBody @Valid UpdateRequest req){
         return service.update(id, req.name, req.description)
                 .map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
     }

@@ -5,6 +5,7 @@ import com.tenantforge.app.service.TimeEntryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import java.time.Instant;
 import java.util.UUID;
@@ -56,7 +57,7 @@ public class TimeEntryController {
 
     @PostMapping
     @Operation(summary = "Create time entry")
-    public TimeEntry create(@RequestBody CreateRequest req) {
+    public TimeEntry create(@RequestBody @Valid CreateRequest req) {
         return service.create(req.taskId, req.userId, req.startedAt, req.endedAt, req.notes);
     }
 
@@ -68,7 +69,7 @@ public class TimeEntryController {
 
     @PutMapping("/{id}")
     @Operation(summary = "Update time entry")
-    public ResponseEntity<TimeEntry> update(@PathVariable UUID id, @RequestBody UpdateRequest req) {
+    public ResponseEntity<TimeEntry> update(@PathVariable UUID id, @RequestBody @Valid UpdateRequest req) {
         return service
                 .update(id, req.startedAt, req.endedAt, req.notes)
                 .map(ResponseEntity::ok)

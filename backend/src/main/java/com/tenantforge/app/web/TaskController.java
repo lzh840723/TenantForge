@@ -5,6 +5,7 @@ import com.tenantforge.app.service.TaskService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
@@ -45,7 +46,7 @@ public class TaskController {
 
     @PostMapping
     @Operation(summary = "Create task")
-    public Task create(@RequestBody CreateRequest req){
+    public Task create(@RequestBody @Valid CreateRequest req){
         return service.create(req.projectId, req.name);
     }
 
@@ -57,7 +58,7 @@ public class TaskController {
 
     @PutMapping("/{id}")
     @Operation(summary = "Update task")
-    public ResponseEntity<Task> update(@PathVariable UUID id, @RequestBody UpdateRequest req){
+    public ResponseEntity<Task> update(@PathVariable UUID id, @RequestBody @Valid UpdateRequest req){
         return service.update(id, req.name, req.status).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
     }
 
@@ -67,6 +68,6 @@ public class TaskController {
         return service.softDelete(id) ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
     }
 
-    public record CreateRequest(UUID projectId, @NotBlank String name){}
+    public record CreateRequest(@jakarta.validation.constraints.NotNull UUID projectId, @NotBlank String name){}
     public record UpdateRequest(@NotBlank String name, @NotBlank String status){}
 }

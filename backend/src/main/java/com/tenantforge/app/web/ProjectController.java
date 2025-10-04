@@ -4,6 +4,8 @@ import com.tenantforge.app.domain.Project;
 import com.tenantforge.app.service.ProjectService;
 import jakarta.validation.constraints.NotBlank;
 import java.util.UUID;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Sort;
@@ -21,32 +23,42 @@ public class ProjectController {
     public ProjectController(ProjectService service){ this.service=service; }
 
     @GetMapping
-    public Page<Project> list(@RequestParam(value = "q", required = false) String q,
+    @Operation(summary = "List projects with pagination and filtering")
+    public Page<Project> list(@Parameter(description = "Name contains filter")
+                              @RequestParam(value = "q", required = false) String q,
+                              @Parameter(description = "Page number (0-based)")
                               @RequestParam(value = "page", defaultValue = "0") int page,
+                              @Parameter(description = "Page size")
                               @RequestParam(value = "size", defaultValue = "20") int size,
+                              @Parameter(description = "Sort field")
                               @RequestParam(value = "sort", defaultValue = "createdAt") String sort,
+                              @Parameter(description = "Sort order asc|desc")
                               @RequestParam(value = "order", defaultValue = "desc") String order){
         Sort.Direction dir = "asc".equalsIgnoreCase(order) ? Sort.Direction.ASC : Sort.Direction.DESC;
         return service.list(q, page, size, Sort.by(dir, sort));
     }
 
     @PostMapping
+    @Operation(summary = "Create a project")
     public Project create(@RequestBody CreateRequest req){
         return service.create(req.name, req.description);
     }
 
     @GetMapping("/{id}")
+    @Operation(summary = "Get project by id")
     public ResponseEntity<Project> get(@PathVariable UUID id){
         return service.find(id).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
     }
 
     @PutMapping("/{id}")
+    @Operation(summary = "Update project")
     public ResponseEntity<Project> update(@PathVariable UUID id, @RequestBody UpdateRequest req){
         return service.update(id, req.name, req.description)
                 .map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{id}")
+    @Operation(summary = "Soft delete project")
     public ResponseEntity<Void> delete(@PathVariable UUID id){
         return service.softDelete(id) ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
     }

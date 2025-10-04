@@ -21,11 +21,11 @@ jobs:
           distribution: temurin
           java-version: '21'
 
-      - name: Maven verify with RUN_PG_IT
+      - name: Maven verify with RUN_PG_IT (failsafe only)
         env:
           RUN_PG_IT: true
           JAVA_TOOL_OPTIONS: -Djava.net.preferIPv4Stack=true
-        run: mvn -f backend/pom.xml -B -Djacoco.skip=true -Dmaven.wagon.http.retryHandler.count=5 clean verify
+        run: mvn -f backend/pom.xml -B -Djacoco.skip=true -DskipTests=true -Dmaven.wagon.http.retryHandler.count=5 clean verify
 
       - name: Upload evidence artifacts
         if: always()

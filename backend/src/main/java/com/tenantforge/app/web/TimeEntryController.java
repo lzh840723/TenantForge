@@ -16,6 +16,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * Time entry CRUD endpoints with filtering by time range, task and user.
+ */
 @RestController
 @RequestMapping("/api/time-entries")
 @Tag(name = "TimeEntries")

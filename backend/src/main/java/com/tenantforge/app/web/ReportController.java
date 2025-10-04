@@ -16,6 +16,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * Reporting endpoints for time aggregation with JSON and CSV formats.
+ */
 @RestController
 @RequestMapping("/api/reports")
 @Tag(name = "Reports")

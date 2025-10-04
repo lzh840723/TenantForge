@@ -14,6 +14,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * Project CRUD endpoints with pagination and filtering.
+ */
 @RestController
 @RequestMapping("/api/projects")
 @Tag(name = "Projects")

@@ -14,6 +14,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * Task CRUD endpoints across projects, with filters for name, project and status.
+ */
 @RestController
 @RequestMapping("/api/tasks")
 @Tag(name = "Tasks")

@@ -30,3 +30,28 @@ API Docs
 - Swagger UI: `/swagger-ui/index.html`
 - OpenAPI JSON: `/v3/api-docs`
 
+Diagram
+```mermaid
+flowchart LR
+  subgraph Client
+    UI[Frontend / Postman]
+  end
+
+  subgraph Backend[Spring Boot]
+    F[JwtAuthenticationFilter]
+    C[Controllers]
+    S[Services]
+    DS[TenantAwareDataSource]
+  end
+
+  subgraph DB[PostgreSQL (Supabase)]
+    RLS[RLS Policies\napp.tenant_id]
+    AUD[Audit Triggers]
+    VW[Time Views]
+  end
+
+  UI -->|Bearer JWT| F --> C --> S --> DS --> DB
+  DB --> RLS
+  DB --> AUD
+  DB --> VW
+```

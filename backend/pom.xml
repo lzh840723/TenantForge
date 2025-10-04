@@ -200,6 +200,7 @@
                     <includes>
                         <include>**/tenant/*IntegrationTest.java</include>
                         <include>**/perf/*IT.java</include>
+                        <include>**/report/*IT.java</include>
                     </includes>
                 </configuration>
                 <executions>

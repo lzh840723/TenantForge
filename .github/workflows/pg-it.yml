@@ -1,0 +1,36 @@
+name: PG Integration Evidence
+
+on:
+  workflow_dispatch:
+
+jobs:
+  pg-it:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Maven verify with RUN_PG_IT
+        env:
+          RUN_PG_IT: true
+          JAVA_TOOL_OPTIONS: -Djava.net.preferIPv4Stack=true
+        run: mvn -f backend/pom.xml -B -Djacoco.skip=true -Dmaven.wagon.http.retryHandler.count=5 clean verify
+
+      - name: Upload evidence artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pg-it-evidence
+          path: |
+            backend/target/artifacts/**
+            backend/target/failsafe-reports/**
+          if-no-files-found: warn
+

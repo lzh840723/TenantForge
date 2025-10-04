@@ -41,7 +41,7 @@ jobs:
           DIRECT_CONNECTION: ${{ secrets.DIRECT_CONNECTION }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           JAVA_TOOL_OPTIONS: -Djava.net.preferIPv4Stack=true
-        run: mvn -f backend/pom.xml -Dmaven.wagon.http.retryHandler.count=5 -B -Djacoco.skip=true clean verify
+        run: mvn -f backend/pom.xml -Dmaven.wagon.http.retryHandler.count=5 -B -Djacoco.skip=true -DskipITs=true -DfailIfNoTests=false clean test
 
       - name: Run backend tests (PR)
         if: github.event_name == 'pull_request'

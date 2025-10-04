@@ -54,11 +54,48 @@ class AuditLogIntegrationTest {
 
     private static void execSql(Statement st, Path path) throws Exception {
         String raw = Files.readString(path);
-        for (String stmt : raw.split(";")) {
+        for (String stmt : splitSql(raw)) {
             String s = stmt.trim();
             if (s.isEmpty() || s.startsWith("--")) continue;
             st.execute(s);
         }
     }
-}
 
+    private static java.util.List<String> splitSql(String sql) {
+        java.util.List<String> stmts = new java.util.ArrayList<>();
+        StringBuilder sb = new StringBuilder();
+        boolean inSingle = false;
+        boolean inDollar = false;
+        for (int i = 0; i < sql.length(); i++) {
+            char c = sql.charAt(i);
+            char next = (i + 1 < sql.length()) ? sql.charAt(i + 1) : '\0';
+
+            if (!inSingle && c == '$' && next == '$') {
+                inDollar = !inDollar;
+                sb.append("$$");
+                i++;
+                continue;
+            }
+
+            if (!inDollar && c == '\'') {
+                if (inSingle && next == '\'') {
+                    sb.append("''");
+                    i++;
+                    continue;
+                }
+                inSingle = !inSingle;
+                sb.append(c);
+                continue;
+            }
+
+            if (!inSingle && !inDollar && c == ';') {
+                stmts.add(sb.toString());
+                sb.setLength(0);
+                continue;
+            }
+            sb.append(c);
+        }
+        if (sb.length() > 0) stmts.add(sb.toString());
+        return stmts;
+    }
+}

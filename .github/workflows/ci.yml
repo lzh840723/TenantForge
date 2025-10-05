@@ -44,11 +44,11 @@ jobs:
           JAVA_TOOL_OPTIONS: -Djava.net.preferIPv4Stack=true
         run: mvn -f backend/pom.xml -Dmaven.wagon.http.retryHandler.count=5 -B -Djacoco.skip=true -DskipITs=true -DfailIfNoTests=false clean test
 
-      - name: Run backend tests (PR)
+      - name: Run backend tests with coverage (PR)
         if: github.event_name == 'pull_request'
         env:
           JAVA_TOOL_OPTIONS: -Djava.net.preferIPv4Stack=true
-        run: mvn -f backend/pom.xml -Dmaven.wagon.http.retryHandler.count=5 -B -DskipITs=true -DfailIfNoTests=false clean test
+        run: mvn -f backend/pom.xml -Dmaven.wagon.http.retryHandler.count=5 -B -DskipITs=true -DfailIfNoTests=false clean verify
 
       - name: Setup Python for diff coverage (PR)
         if: github.event_name == 'pull_request'
@@ -60,7 +60,7 @@ jobs:
         if: github.event_name == 'pull_request'
         run: pip install --no-cache-dir diff-cover
 
-      - name: Diff coverage report (non-blocking)
+      - name: Diff coverage report (artifact)
         if: github.event_name == 'pull_request'
         run: |
           git fetch --no-tags --prune --depth=1 origin "${{ github.base_ref }}"
@@ -82,8 +82,8 @@ jobs:
             diff-coverage.txt
           if-no-files-found: warn
 
-      - name: Enforce diff coverage >= 90% (label: cov-gate)
-        if: github.event_name == 'pull_request' && contains(join(github.event.pull_request.labels.*.name, ','), 'cov-gate')
+      - name: Enforce diff coverage >= 90% (PRs)
+        if: github.event_name == 'pull_request'
         run: |
           git fetch --no-tags --prune --depth=1 origin "${{ github.base_ref }}"
           diff-cover backend/target/site/jacoco/jacoco.xml \

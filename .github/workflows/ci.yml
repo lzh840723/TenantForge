@@ -180,7 +180,8 @@ jobs:
           echo "RAILWAY_DOMAIN=$DOMAIN" >> $GITHUB_ENV
 
       - name: Persist default backend base to frontend/config.js
-        if: env.RAILWAY_DOMAIN != ''
+        # Avoid bot commits on feature branches which won't trigger CI and clutter PR history
+        if: env.RAILWAY_DOMAIN != '' && github.ref == 'refs/heads/main'
         run: |
           set -e
           file=frontend/config.js

@@ -22,6 +22,11 @@ Artifacts
 CI Workflows
 - Main CI: .github/workflows/ci.yml (unit tests + jacoco artifact)
 - PG IT (manual): .github/workflows/pg-it.yml (uploads evidence)
+- Coverage (manual): .github/workflows/coverage.yml (global + diff coverage)
+
+Diff Coverage Gating (gradual)
+- On PRs, CI always uploads a non-blocking diff coverage report (HTML/JSON/TXT).
+- To enforce ≥90% on a specific PR, add label `cov-gate` to the PR.
 
 Next Actions
 - Optional: re-enable diff coverage gating once coverage stabilizes.

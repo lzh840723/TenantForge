@@ -47,7 +47,47 @@ jobs:
         if: github.event_name == 'pull_request'
         env:
           JAVA_TOOL_OPTIONS: -Djava.net.preferIPv4Stack=true
-        run: mvn -f backend/pom.xml -Dmaven.wagon.http.retryHandler.count=5 -B -Djacoco.skip=true -DskipITs=true -DfailIfNoTests=false test
+        run: mvn -f backend/pom.xml -Dmaven.wagon.http.retryHandler.count=5 -B -DskipITs=true -DfailIfNoTests=false clean test
+
+      - name: Setup Python for diff coverage (PR)
+        if: github.event_name == 'pull_request'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install diff-cover (PR)
+        if: github.event_name == 'pull_request'
+        run: pip install --no-cache-dir diff-cover
+
+      - name: Diff coverage report (non-blocking)
+        if: github.event_name == 'pull_request'
+        run: |
+          git fetch --no-tags --prune --depth=1 origin "${{ github.base_ref }}"
+          diff-cover backend/target/site/jacoco/jacoco.xml \
+            --compare-branch "origin/${{ github.base_ref }}" \
+            --html-report diff-coverage.html \
+            --json-report diff-coverage.json || true
+          diff-cover backend/target/site/jacoco/jacoco.xml \
+            --compare-branch "origin/${{ github.base_ref }}" | tee diff-coverage.txt || true
+
+      - name: Upload diff coverage artifacts
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: diff-coverage-report
+          path: |
+            diff-coverage.html
+            diff-coverage.json
+            diff-coverage.txt
+          if-no-files-found: warn
+
+      - name: Enforce diff coverage >= 90% (label: cov-gate)
+        if: github.event_name == 'pull_request' && contains(join(github.event.pull_request.labels.*.name, ','), 'cov-gate')
+        run: |
+          git fetch --no-tags --prune --depth=1 origin "${{ github.base_ref }}"
+          diff-cover backend/target/site/jacoco/jacoco.xml \
+            --compare-branch "origin/${{ github.base_ref }}" \
+            --fail-under=90
 
       - name: Upload test reports
         if: always()
@@ -73,6 +113,8 @@ jobs:
 
   deploy-backend:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     needs: backend-ci
     if: github.event_name == 'push'
     steps:
@@ -109,6 +151,44 @@ jobs:
           fi
           export PATH="$HOME/.railway/bin:$PATH"
           ./scripts/railway-deploy.sh
+
+      - name: Ensure Railway domain (generate if missing)
+        if: env.RAILWAY_TOKEN != ''
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_SERVICE_NAME: ${{ secrets.RAILWAY_SERVICE_NAME }}
+        run: |
+          export PATH="$HOME/.railway/bin:$PATH"
+          svc_name="${RAILWAY_SERVICE_NAME:-TenantForge}"
+          set -e
+          # Try to fetch status first; if domain list empty, generate one
+          railway status --json > status.json || true
+          have_domain=$(jq -r '.services.edges[0].node.serviceInstances.edges[0].node.domains.serviceDomains | length > 0' status.json 2>/dev/null || echo false)
+          if [ "$have_domain" != "true" ]; then
+            railway domain -s "$svc_name" -p 8080 --json > domain.json
+          else
+            jq '{domain: .services.edges[0].node.serviceInstances.edges[0].node.domains.serviceDomains[0].domain}' status.json > domain.json
+          fi
+          DOMAIN=$(jq -r '.domain' domain.json)
+          echo "RAILWAY_DOMAIN=$DOMAIN" >> $GITHUB_ENV
+
+      - name: Persist default backend base to frontend/config.js
+        if: env.RAILWAY_DOMAIN != ''
+        run: |
+          set -e
+          file=frontend/config.js
+          domain="https://$RAILWAY_DOMAIN"
+          if grep -q "^window.BACKEND_BASE_URL" "$file"; then
+            sed -i.bak "s|^window.BACKEND_BASE_URL.*|window.BACKEND_BASE_URL = '$domain';|" "$file"
+          else
+            printf "\nwindow.BACKEND_BASE_URL = '%s';\n" "$domain" >> "$file"
+          fi
+          rm -f "$file.bak"
+          git config user.email "actions@github.com"
+          git config user.name "github-actions[bot]"
+          git add "$file"
+          git commit -m "chore(frontend): set default backend base to $RAILWAY_DOMAIN" || echo "No changes"
+          git push || echo "No changes to push"
 
   deploy-frontend:
     runs-on: ubuntu-latest

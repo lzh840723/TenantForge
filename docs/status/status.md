@@ -9,7 +9,7 @@ Progress
 - 3.5 Domain (Projects/Tasks/Time): done
 - 3.6 Reports & Export: all done (views/API and performance evidence captured)
 - 3.7 API Docs & Observability: done (OpenAPI UI, Actuator, Prometheus)
-- 3.8 Tests & CI/CD: pipelines stable; coverage gates staged
+- 3.8 Tests & CI/CD: pipelines stable; PR diff-coverage ≥90% enforced
 - 3.9 Deliverables: Postman, demo script, release notes draft added
 - 3.10 Close-out: status assets generated; changelog added; final audit pending
 
@@ -24,10 +24,9 @@ CI Workflows
 - PG IT (manual): .github/workflows/pg-it.yml (uploads evidence)
 - Coverage (manual): .github/workflows/coverage.yml (global + diff coverage)
 
-Diff Coverage Gating (gradual)
-- On PRs, CI always uploads a non-blocking diff coverage report (HTML/JSON/TXT).
-- To enforce ≥90% on a specific PR, add label `cov-gate` to the PR.
+Diff Coverage Gating
+- On PRs, CI enforces diff coverage ≥90% by default and uploads HTML/JSON/TXT artifacts for review.
 
 Next Actions
-- Optional: re-enable diff coverage gating once coverage stabilizes.
 - Optional: expand E2E with real JWT and cross-tenant negative paths.
+- Finalize demo recording and close final audit checklist.

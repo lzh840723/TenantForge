@@ -14,17 +14,17 @@
     "3.8": {
       "testcontainers_core": "in_progress",
       "workflows": "in_progress",
-      "coverage_gates": "in_progress"
+      "coverage_gates": "done"
     },
     "3.9": {
       "readme_arch_api": "done",
       "reports_assets": "done",
-      "demo_recording": "pending"
+      "demo_recording": "in_progress"
     },
     "3.10": {
       "status_assets": "done",
       "changelog": "done",
-      "final_audit": "pending"
+      "final_audit": "in_progress"
     }
   },
   "artifacts": {

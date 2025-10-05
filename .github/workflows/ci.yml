@@ -4,6 +4,7 @@ on:
   push:
     branches: [ main, feat/backend-scaffold ]
   pull_request:
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -153,7 +154,7 @@ jobs:
           ./scripts/railway-deploy.sh
 
       - name: Ensure Railway domain (generate if missing)
-        if: env.RAILWAY_TOKEN != ''
+        if: ${{ secrets.RAILWAY_TOKEN != '' }}
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
           RAILWAY_SERVICE_NAME: ${{ secrets.RAILWAY_SERVICE_NAME }}

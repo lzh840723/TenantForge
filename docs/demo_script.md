@@ -4,7 +4,7 @@ This script demonstrates a minimal end-to-end flow with the API.
 
 Prerequisites
 - Backend is running and reachable at `{{baseUrl}}` (default `http://localhost:8080`).
-- Postman or curl installed.
+- Postman or curl installed. Optionally, run the scripted flow: `BASE_URL={{baseUrl}} ./scripts/demo_run.sh` to capture evidence automatically under `docs/evidence/api_demo/`.
 
 Steps
 1) Health and OpenAPI
@@ -34,4 +34,3 @@ Steps
 Postman
 - Import `docs/postman/TenantForge.postman_collection.json`.
 - Set `baseUrl` to your server and put `accessToken` into collection variables after register/login.
-

@@ -144,7 +144,9 @@
     const r = await api('/api/tasks?'+p.toString()); renderOut(r,'#tasksOut');
   }
   async function refreshTeOutFromFilters(){
-    const p = new URLSearchParams({ start:$('#teFilterStart').value, end:$('#teFilterEnd').value, taskId:$('#teTaskId').value.trim(), userId:$('#teUserId').value.trim(), page:'0', size:'10', sort:'startedAt', order:'desc' });
+    const p = new URLSearchParams({ page:'0', size:'10', sort:'startedAt', order:'desc' });
+    const s=$('#teFilterStart').value, e=$('#teFilterEnd').value; const tid=$('#teTaskId').value.trim(); const uid=$('#teUserId').value.trim();
+    if(s) p.set('start', s); if(e) p.set('end', e); if(isUuid(tid)) p.set('taskId', tid); if(isUuid(uid)) p.set('userId', uid);
     const r = await api('/api/time-entries?'+p.toString()); renderOut(r,'#teOut');
   }
   function isUuid(s){ return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(s).trim()); }
@@ -376,7 +378,52 @@
       await refreshTeOutFromFilters();
     });
     $('#teCopyId').addEventListener('click', async ()=>{ const id=$('#teId').value.trim(); if(!isUuid(id)){ toast('尚未选择工时','err'); return; } await navigator.clipboard.writeText(id); toast('已复制工时ID'); });
-    $('#teList').addEventListener('click', async ()=>{ if(!requireAuth()) return; const p=new URLSearchParams({ start:$('#teFilterStart').value, end:$('#teFilterEnd').value, taskId:$('#teTaskId').value.trim(), userId:$('#teUserId').value.trim(), page:'0', size:'20', sort:'startedAt', order:'desc' }); const r=await api('/api/time-entries?'+p.toString()); renderList(r,'#teTableWrap',['id','taskId','userId','startedAt','endedAt','notes'], (row)=>{ $('#teId').value=row.id; $('#teTaskId').value=row.taskId||''; $('#teUserId').value=row.userId||''; $('#teStart').value=row.startedAt||''; $('#teEnd').value=row.endedAt||''; $('#teNotes').value=row.notes||''; }); });
+    $('#teList').addEventListener('click', async ()=>{ if(!requireAuth()) return; const p=new URLSearchParams({ page:'0', size:'20', sort:'startedAt', order:'desc' }); const s=$('#teFilterStart').value; const e=$('#teFilterEnd').value; const tid=$('#teTaskId').value.trim(); const uid=$('#teUserId').value.trim(); if(s) p.set('start', s); if(e) p.set('end', e); if(isUuid(tid)) p.set('taskId', tid); if(isUuid(uid)) p.set('userId', uid); const r=await api('/api/time-entries?'+p.toString()); renderList(r,'#teTableWrap',['id','taskId','userId','startedAt','endedAt','notes'], (row)=>{ $('#teId').value=row.id; $('#teTaskId').value=row.taskId||''; $('#teUserId').value=row.userId||''; $('#teStart').value=row.startedAt||''; $('#teEnd').value=row.endedAt||''; $('#teNotes').value=row.notes||''; }); });
+
+    // seed demo time entries
+    $('#teSeed').addEventListener('click', async ()=>{
+      if(!requireAuth()) return;
+      // ensure taskId
+      let taskId = $('#teTaskId').value.trim();
+      if(!isUuid(taskId)){
+        // ensure demo project
+        const qProj = new URLSearchParams({ q:'Demo Project', size:'1' });
+        let pr = await api('/api/projects?'+qProj.toString());
+        let projId = pr.ok && pr.data?.content?.[0]?.id; 
+        if(!projId){
+          const crt = await api('/api/projects', {method:'POST', body:{name:'Demo Project', description:'seeded'}});
+          if(!crt.ok){ renderOut(crt,'#teOut'); return; }
+          projId = crt.data.id;
+        }
+        // ensure demo task
+        const qTask = new URLSearchParams({ q:'Demo Task', projectId: projId, size:'1' });
+        let tr = await api('/api/tasks?'+qTask.toString());
+        taskId = tr.ok && tr.data?.content?.[0]?.id;
+        if(!taskId){
+          const tcrt = await api('/api/tasks', {method:'POST', body:{ projectId: projId, name:'Demo Task' }});
+          if(!tcrt.ok){ renderOut(tcrt,'#teOut'); return; }
+          taskId = tcrt.data.id;
+        }
+        $('#teTaskId').value = taskId;
+      }
+      const userId = ($('#teUserId').value.trim() || userIdFromAccess());
+      if(!isUuid(userId)){ toast('无法确定用户ID，请先登录','err'); return; }
+      // create 3 entries in the last 3 days
+      const now = new Date();
+      const mkIso = d=> new Date(d).toISOString();
+      const hoursAgo = h => new Date(Date.now() - h*3600*1000);
+      const payloads = [
+        { startedAt: mkIso(hoursAgo(6)), endedAt: mkIso(hoursAgo(5)), notes:'Demo work A' },
+        { startedAt: mkIso(hoursAgo(30)), endedAt: mkIso(hoursAgo(28)), notes:'Demo work B' },
+        { startedAt: mkIso(hoursAgo(54)), endedAt: mkIso(hoursAgo(52)), notes:'Demo work C' }
+      ];
+      for(const pld of payloads){
+        const r = await api('/api/time-entries', {method:'POST', body:{ taskId, userId, ...pld }});
+        if(!r.ok){ renderOut(r,'#teOut'); return; }
+      }
+      toast('已填充示例工时');
+      const btn=$('#teList'); if(btn) btn.click();
+    });
 
     // reports
     $('#rJson').addEventListener('click', async ()=>{ if(!requireAuth()) return; const p=getReportParams(); const r=await api('/api/reports/time?'+p.toString()); renderOut(r,'#reportOut'); });

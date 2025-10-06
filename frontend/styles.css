@@ -66,6 +66,7 @@ input,select,textarea{
   border-radius:10px; padding:10px 12px; outline:none; min-width:0
 }
 input:focus,select:focus,textarea:focus{border-color:#2d3c6f; box-shadow:0 0 0 3px rgba(91,133,255,.18)}
+input[readonly]{opacity:.8; cursor:not-allowed}
 
 button{
   background:linear-gradient(180deg,#5b85ff,#476ee3); color:#fff; border:none; padding:10px 14px;

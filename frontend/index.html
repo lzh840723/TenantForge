@@ -60,8 +60,10 @@
         </div>
         <div class="zone inputs grid three">
           <div class="field"><label>名称包含 (q)</label><input id="projQ" placeholder="例如 demo" /></div>
-          <div class="field"><label>项目ID或名称关键词</label><input id="projId" placeholder="UUID 或 关键字" /></div>
-          <div></div>
+          <div class="field"><label>项目ID（只读，点击下表选择）</label><input id="projId" placeholder="点击下表选择自动回填" readonly /></div>
+          <div class="row">
+            <button id="projCopyId" class="ghost">复制ID</button>
+          </div>
           <div class="field"><label>名称（更新/新建时的新值）</label><input id="projName" placeholder="名称" /></div>
           <div class="field"><label>描述（更新/新建时的新值）</label><input id="projDesc" placeholder="描述" /></div>
         </div>

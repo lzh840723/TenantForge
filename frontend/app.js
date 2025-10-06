@@ -138,7 +138,8 @@
   async function refreshTasksOutFromFilters(){
     const pid = ($('#taskProjectId').value.trim() || lastProjectId());
     const status = normalizedTaskStatus();
-    const p = new URLSearchParams({ q:$('#taskQ').value, projectId:pid, page:'0', size:'10', sort:'createdAt', order:'desc' });
+    const p = new URLSearchParams({ q:$('#taskQ').value, page:'0', size:'10', sort:'createdAt', order:'desc' });
+    if(isUuid(pid)) p.set('projectId', pid);
     if(status) p.set('status', status);
     const r = await api('/api/tasks?'+p.toString()); renderOut(r,'#tasksOut');
   }
@@ -247,7 +248,17 @@
     $('#projCopyId').addEventListener('click', async ()=>{ const id=$('#projId').value.trim(); if(!isUuid(id)){ toast('尚未选择项目','err'); return; } await navigator.clipboard.writeText(id); toast('已复制项目ID'); });
 
     // tasks
-    $('#taskList').addEventListener('click', async ()=>{ if(!requireAuth()) return; const pid = ($('#taskProjectId').value.trim() || lastProjectId()); const status = normalizedTaskStatus(); const p=new URLSearchParams({ q:$('#taskQ').value, projectId:pid, page:'0', size:'20', sort:'createdAt', order:'desc' }); if(status) p.set('status', status); const r=await api('/api/tasks?'+p.toString()); renderList(r,'#taskTableWrap',['id','projectId','name','status','createdAt'], (row)=>{ $('#taskId').value=row.id; $('#taskName').value=row.name; $('#taskStatus').value=row.status||''; $('#taskProjectId').value=row.projectId||''; }); });
+    $('#taskList').addEventListener('click', async ()=>{
+      if(!requireAuth()) return;
+      const pid = ($('#taskProjectId').value.trim() || lastProjectId());
+      const status = normalizedTaskStatus();
+      const p=new URLSearchParams({ q:$('#taskQ').value, page:'0', size:'20', sort:'createdAt', order:'desc' });
+      if(isUuid(pid)) p.set('projectId', pid);
+      if(status) p.set('status', status);
+      const r=await api('/api/tasks?'+p.toString());
+      renderList(r,'#taskTableWrap',['id','projectId','name','status','createdAt'], (row)=>{ $('#taskId').value=row.id; $('#taskName').value=row.name; $('#taskStatus').value=row.status||''; $('#taskProjectId').value=row.projectId||''; });
+      renderOut(r,'#tasksOut');
+    });
     $('#taskCreate').addEventListener('click', async ()=>{
       if(!requireAuth()) return;
       const pid = ($('#taskProjectId').value.trim() || lastProjectId());
@@ -265,7 +276,9 @@
       // 查询：使用名称/项目ID/状态等非 ID 条件，表格展示
       const name = ($('#taskName').value || $('#taskQ').value || '').trim();
       const status = normalizedTaskStatus();
-      const p = new URLSearchParams({ q:name, projectId:$('#taskProjectId').value.trim(), page:'0', size:'20', sort:'createdAt', order:'desc' });
+      const pid = $('#taskProjectId').value.trim();
+      const p = new URLSearchParams({ q:name, page:'0', size:'20', sort:'createdAt', order:'desc' });
+      if(isUuid(pid)) p.set('projectId', pid);
       if(status) p.set('status', status);
       const r = await api('/api/tasks?'+p.toString());
       if(!r.ok){ renderOut(r,'#tasksOut'); return; }

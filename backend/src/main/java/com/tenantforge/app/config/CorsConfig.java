@@ -21,13 +21,17 @@ public class CorsConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration cfg = new CorsConfiguration();
-        cfg.setAllowedOrigins(allowedOrigins);
-        cfg.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        cfg.setAllowedHeaders(List.of("Authorization", "Content-Type"));
+        // Allow any header/method by default; restrict via property if需要
+        cfg.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        cfg.addAllowedHeader("*");
         cfg.setAllowCredentials(false);
+        if (allowedOrigins == null || allowedOrigins.isEmpty() || (allowedOrigins.size() == 1 && "*".equals(allowedOrigins.get(0)))) {
+            cfg.addAllowedOriginPattern("*");
+        } else {
+            cfg.setAllowedOrigins(allowedOrigins);
+        }
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", cfg);
         return source;
     }
 }
-

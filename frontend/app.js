@@ -152,7 +152,9 @@
   async function refreshTeOutFromFilters(){
     const p = new URLSearchParams({ page:'0', size:'10', sort:'startedAt', order:'desc' });
     const s=$('#teFilterStart').value, e=$('#teFilterEnd').value; const tid=$('#teTaskId').value.trim(); const uid=$('#teUserId').value.trim();
-    if(s) p.set('start', s); if(e) p.set('end', e); if(isUuid(tid)) p.set('taskId', tid); if(isUuid(uid)) p.set('userId', uid);
+    if(s && !isNaN(Date.parse(s))) p.set('start', s);
+    if(e && !isNaN(Date.parse(e))) p.set('end', e);
+    if(isUuid(tid)) p.set('taskId', tid); if(isUuid(uid)) p.set('userId', uid);
     const r = await api('/api/time-entries?'+p.toString()); renderOut(r,'#teOut');
   }
   function isUuid(s){ return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(s).trim()); }
@@ -349,7 +351,12 @@
     });
     $('#teGet').addEventListener('click', async ()=>{ if(!requireAuth()) return;
       // 查询：使用 taskId/userId/time 窗口等非 ID 条件，表格展示
-      const p=new URLSearchParams({ start:$('#teFilterStart').value, end:$('#teFilterEnd').value, taskId:$('#teTaskId').value.trim(), userId:$('#teUserId').value.trim(), page:'0', size:'20', sort:'startedAt', order:'desc' });
+      const p=new URLSearchParams({ page:'0', size:'20', sort:'startedAt', order:'desc' });
+      const s=$('#teFilterStart').value, e=$('#teFilterEnd').value; const tid=$('#teTaskId').value.trim(), uid=$('#teUserId').value.trim();
+      if(s && !isNaN(Date.parse(s))) p.set('start', s);
+      if(e && !isNaN(Date.parse(e))) p.set('end', e);
+      if(isUuid(tid)) p.set('taskId', tid);
+      if(isUuid(uid)) p.set('userId', uid);
       const r = await api('/api/time-entries?'+p.toString());
       if(!r.ok){ renderOut(r,'#teOut'); return; }
       const wrap = '#teTableWrap';
@@ -391,7 +398,7 @@
       await refreshTeOutFromFilters();
     });
     $('#teCopyId').addEventListener('click', async ()=>{ const id=$('#teId').value.trim(); if(!isUuid(id)){ toast('尚未选择工时','err'); return; } await navigator.clipboard.writeText(id); toast('已复制工时ID'); });
-    $('#teList').addEventListener('click', async ()=>{ if(!requireAuth()) return; const p=new URLSearchParams({ page:'0', size:'20', sort:'startedAt', order:'desc' }); const s=$('#teFilterStart').value; const e=$('#teFilterEnd').value; const tid=$('#teTaskId').value.trim(); const uid=$('#teUserId').value.trim(); if(s) p.set('start', s); if(e) p.set('end', e); if(isUuid(tid)) p.set('taskId', tid); if(isUuid(uid)) p.set('userId', uid); const r=await api('/api/time-entries?'+p.toString()); renderList(r,'#teTableWrap',['id','taskId','userId','startedAt','endedAt','notes'], (row)=>{ $('#teId').value=row.id; $('#teTaskId').value=row.taskId||''; $('#teUserId').value=row.userId||''; $('#teStart').value=row.startedAt||''; $('#teEnd').value=row.endedAt||''; $('#teNotes').value=row.notes||''; }); });
+    $('#teList').addEventListener('click', async ()=>{ if(!requireAuth()) return; const p=new URLSearchParams({ page:'0', size:'20', sort:'startedAt', order:'desc' }); const s=$('#teFilterStart').value; const e=$('#teFilterEnd').value; const tid=$('#teTaskId').value.trim(); const uid=$('#teUserId').value.trim(); if(s && !isNaN(Date.parse(s))) p.set('start', s); else if(s){ toast('过滤开始时间不是有效 ISO，已忽略','warn'); } if(e && !isNaN(Date.parse(e))) p.set('end', e); else if(e){ toast('过滤结束时间不是有效 ISO，已忽略','warn'); } if(isUuid(tid)) p.set('taskId', tid); if(isUuid(uid)) p.set('userId', uid); const r=await api('/api/time-entries?'+p.toString()); renderList(r,'#teTableWrap',['id','taskId','userId','startedAt','endedAt','notes'], (row)=>{ $('#teId').value=row.id; $('#teTaskId').value=row.taskId||''; $('#teUserId').value=row.userId||''; $('#teStart').value=row.startedAt||''; $('#teEnd').value=row.endedAt||''; $('#teNotes').value=row.notes||''; }); renderOut(r,'#teOut'); });
 
     // seed demo time entries
     $('#teSeed').addEventListener('click', async ()=>{

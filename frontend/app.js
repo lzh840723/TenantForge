@@ -43,6 +43,8 @@
   function b64urlToUtf8(s){ try{ s=s.replace(/-/g,'+').replace(/_/g,'/'); const pad=s.length%4?4-(s.length%4):0; return decodeURIComponent(escape(atob(s+'='.repeat(pad)))); }catch(e){ return ''; }}
   function decodeJwt(tok){ if(!tok||tok.split('.').length<2) return null; try{ return JSON.parse(b64urlToUtf8(tok.split('.')[1])); }catch(e){ return null; } }
   function userIdFromAccess(){ const c=decodeJwt(state.access)||{}; return c.sub||''; }
+  function lastProjectId(){ return localStorage.getItem('lastProjectId') || ''; }
+  function rememberProjectId(id){ if(isUuid(id)) localStorage.setItem('lastProjectId', id); }
 
   async function api(path, {method='GET', body=null, headers={}, retry=true, noAuth=false}={}){
     const h = {'Content-Type':'application/json', ...headers};
@@ -131,6 +133,9 @@
     ['auth','projects','tasks','time','reports','health'].forEach(id=>{
       const el = '#'+id; const node=$(el); if(node) node.hidden = (id!==section);
     });
+    if(section==='tasks'){
+      const pid = $('#taskProjectId'); if(pid && !pid.value) pid.value = lastProjectId();
+    }
   }
 
   // Event binding
@@ -162,7 +167,7 @@
     $('#btnCopyAccess').addEventListener('click', async ()=>{ if(!state.access){ toast('无 Access Token'); return; } await navigator.clipboard.writeText(state.access); toast('已复制 Access'); });
 
     // projects
-    $('#projList').addEventListener('click', async ()=>{ if(!requireAuth()) return; const q = new URLSearchParams({ q: $('#projQ').value, page:'0', size:'20', sort:'createdAt', order:'desc' }); const r = await api('/api/projects?'+q.toString()); renderList(r, '#projTableWrap', ['id','name','description','createdAt'], (row)=>{ $('#projId').value=row.id; $('#projName').value=row.name; $('#projDesc').value=row.description||''; }); });
+    $('#projList').addEventListener('click', async ()=>{ if(!requireAuth()) return; const q = new URLSearchParams({ q: $('#projQ').value, page:'0', size:'20', sort:'createdAt', order:'desc' }); const r = await api('/api/projects?'+q.toString()); renderList(r, '#projTableWrap', ['id','name','description','createdAt'], (row)=>{ $('#projId').value=row.id; $('#projName').value=row.name; $('#projDesc').value=row.description||''; rememberProjectId(row.id); }); });
     $('#projCreate').addEventListener('click', async ()=>{
       if(!requireAuth()) return;
       const r = await api('/api/projects',{method:'POST', body:{ name: $('#projName').value, description: $('#projDesc').value }});
@@ -219,14 +224,16 @@
     $('#projCopyId').addEventListener('click', async ()=>{ const id=$('#projId').value.trim(); if(!isUuid(id)){ toast('尚未选择项目','err'); return; } await navigator.clipboard.writeText(id); toast('已复制项目ID'); });
 
     // tasks
-    $('#taskList').addEventListener('click', async ()=>{ if(!requireAuth()) return; const p=new URLSearchParams({ q:$('#taskQ').value, projectId:$('#taskProjectId').value.trim(), status:$('#taskStatus').value, page:'0', size:'20', sort:'createdAt', order:'desc' }); const r=await api('/api/tasks?'+p.toString()); renderList(r,'#taskTableWrap',['id','projectId','name','status','createdAt'], (row)=>{ $('#taskId').value=row.id; $('#taskName').value=row.name; $('#taskStatus').value=row.status||''; $('#taskProjectId').value=row.projectId||''; }); });
+    $('#taskList').addEventListener('click', async ()=>{ if(!requireAuth()) return; const pid = ($('#taskProjectId').value.trim() || lastProjectId()); const p=new URLSearchParams({ q:$('#taskQ').value, projectId:pid, status:$('#taskStatus').value, page:'0', size:'20', sort:'createdAt', order:'desc' }); const r=await api('/api/tasks?'+p.toString()); renderList(r,'#taskTableWrap',['id','projectId','name','status','createdAt'], (row)=>{ $('#taskId').value=row.id; $('#taskName').value=row.name; $('#taskStatus').value=row.status||''; $('#taskProjectId').value=row.projectId||''; }); });
     $('#taskCreate').addEventListener('click', async ()=>{
       if(!requireAuth()) return;
-      const r=await api('/api/tasks',{method:'POST', body:{ projectId:$('#taskProjectId').value.trim(), name:$('#taskName').value }});
+      const pid = ($('#taskProjectId').value.trim() || lastProjectId());
+      if(!requireUuid(pid)) { toast('请先选择项目ID（到“项目”页点一行，或在此粘贴）','err'); return; }
+      const r=await api('/api/tasks',{method:'POST', body:{ projectId: pid, name:$('#taskName').value }});
       renderOut(r,'#tasksOut');
       if(r.ok){
         toast('任务已创建');
-        const id = r.data && r.data.id; if(id){ $('#taskId').value = id; $('#taskName').value = r.data.name||$('#taskName').value; $('#taskStatus').value = r.data.status||$('#taskStatus').value; const r2 = await api('/api/tasks/'+id); renderOut(r2,'#tasksOut'); }
+        const id = r.data && r.data.id; if(id){ $('#taskId').value = id; $('#taskName').value = r.data.name||$('#taskName').value; $('#taskStatus').value = r.data.status||$('#taskStatus').value; $('#taskProjectId').value = r.data.projectId || pid; const r2 = await api('/api/tasks/'+id); renderOut(r2,'#tasksOut'); }
         const btn = $('#taskList'); if(btn) btn.click();
       }
     });

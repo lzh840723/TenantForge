@@ -154,3 +154,5 @@ local_notes/             Internal playbooks (.env stored here)
 - Integration tests (requires Docker): `make test-integration`
 
 <!-- trigger: 2025-10-06T04:04:57Z -->
+
+<!-- backend redeploy trigger: 2025-10-06T04:54:06Z -->

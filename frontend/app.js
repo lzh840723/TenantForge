@@ -113,6 +113,16 @@
     });
     tbl.appendChild(tbody); return tbl;
   }
+  function getReportParams(){
+    const p = new URLSearchParams();
+    const period = ($('#rPeriod')?.value||'').trim() || 'week';
+    const projectId = ($('#rProjectId')?.value||'').trim();
+    const userId = ($('#rUserId')?.value||'').trim();
+    p.set('period', period);
+    if(projectId) p.set('projectId', projectId);
+    if(userId) p.set('userId', userId);
+    return p;
+  }
   function isUuid(s){ return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(s).trim()); }
   function get(o, path){ try{ return path.split('.').reduce((x,k)=>(x||{})[k], o); }catch(e){ return undefined; } }
   function safe(v){ if(v==null) return ''; if(typeof v==='object') return JSON.stringify(v); return String(v); }
@@ -259,6 +269,7 @@
       $('#taskId').value='';
       const btn=$('#taskList'); if(btn) btn.click();
     });
+    $('#taskCopyId').addEventListener('click', async ()=>{ const id=$('#taskId').value.trim(); if(!isUuid(id)){ toast('尚未选择任务','err'); return; } await navigator.clipboard.writeText(id); toast('已复制任务ID'); });
 
     // time entries
     $('#teCreate').addEventListener('click', async ()=>{
@@ -313,6 +324,7 @@
       $('#teId').value='';
       const btn=$('#teList'); if(btn) btn.click();
     });
+    $('#teCopyId').addEventListener('click', async ()=>{ const id=$('#teId').value.trim(); if(!isUuid(id)){ toast('尚未选择工时','err'); return; } await navigator.clipboard.writeText(id); toast('已复制工时ID'); });
     $('#teList').addEventListener('click', async ()=>{ if(!requireAuth()) return; const p=new URLSearchParams({ start:$('#teFilterStart').value, end:$('#teFilterEnd').value, taskId:$('#teTaskId').value.trim(), userId:$('#teUserId').value.trim(), page:'0', size:'20', sort:'startedAt', order:'desc' }); const r=await api('/api/time-entries?'+p.toString()); renderList(r,'#teTableWrap',['id','taskId','userId','startedAt','endedAt','notes'], (row)=>{ $('#teId').value=row.id; $('#teTaskId').value=row.taskId||''; $('#teUserId').value=row.userId||''; $('#teStart').value=row.startedAt||''; $('#teEnd').value=row.endedAt||''; $('#teNotes').value=row.notes||''; }); });
 
     // reports

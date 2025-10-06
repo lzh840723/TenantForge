@@ -88,7 +88,8 @@
           <div class="field"><label>项目ID</label><input id="taskProjectId" placeholder="过滤/创建" /></div>
           <div class="field"><label>状态</label><input id="taskStatus" placeholder="OPEN/CLOSED" /></div>
           <div class="field"><label>任务名称</label><input id="taskName" placeholder="创建/更新用" /></div>
-          <div class="field"><label>任务ID</label><input id="taskId" placeholder="UUID" /></div>
+          <div class="field"><label>任务ID（只读，点击下表选择）</label><input id="taskId" placeholder="点击下表选择自动回填" readonly /></div>
+          <div class="row"><button id="taskCopyId" class="ghost">复制ID</button></div>
         </div>
         <div class="zone results">
           <div id="taskTableWrap" class="row"></div>
@@ -112,7 +113,8 @@
           <div class="field"><label>备注</label><input id="teNotes" placeholder="备注 (可空)" /></div>
           <div class="field"><label>开始时间</label><input id="teStart" placeholder="ISO，默认现在-1h" /></div>
           <div class="field"><label>结束时间</label><input id="teEnd" placeholder="ISO，默认现在" /></div>
-          <div class="field"><label>工时ID</label><input id="teId" placeholder="UUID" /></div>
+          <div class="field"><label>工时ID（只读，点击下表选择）</label><input id="teId" placeholder="点击下表选择自动回填" readonly /></div>
+          <div class="row"><button id="teCopyId" class="ghost">复制ID</button></div>
           <div class="field"><label>过滤开始</label><input id="teFilterStart" placeholder="ISO" /></div>
           <div class="field"><label>过滤结束</label><input id="teFilterEnd" placeholder="ISO" /></div>
         </div>

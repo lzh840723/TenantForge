@@ -454,14 +454,9 @@
       try{
         const resp = await fetch(url, { headers: { 'Authorization': 'Bearer '+state.access } });
         if(resp.status===401){ const ok = await doRefresh(); if(!ok) { toast('请先登录','err'); return; } return $('#rCsv').click(); }
-        if(!resp.ok){ const text=await resp.text(); renderOut({ok:false,status:resp.status,data:text}, '#reportOut'); return; }
-        const blob = await resp.blob();
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        const ts = new Date().toISOString().replace(/[:.]/g,'-');
-        a.download = 'time-report-'+ts+'.csv';
-        document.body.appendChild(a); a.click(); a.remove();
-        toast('CSV 已下载');
+        const text = await resp.text();
+        renderOut({ok: resp.ok, status: resp.status, data: text}, '#reportOut');
+        if(resp.ok) toast('CSV 已显示');
       }catch(e){ renderOut({ok:false,status:0,data:String(e)}, '#reportOut'); }
     });
 

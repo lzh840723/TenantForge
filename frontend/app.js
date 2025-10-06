@@ -308,6 +308,7 @@
         toast('工时已创建');
         const id = r.data && r.data.id; if(id){ $('#teId').value = id; const r2 = await api('/api/time-entries/'+id); renderOut(r2,'#teOut'); }
         const btn = $('#teList'); if(btn) btn.click();
+        await refreshTeOutFromFilters();
       }
     });
     $('#teGet').addEventListener('click', async ()=>{ if(!requireAuth()) return;

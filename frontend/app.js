@@ -141,7 +141,16 @@
 
     // projects
     $('#projList').addEventListener('click', async ()=>{ const q = new URLSearchParams({ q: $('#projQ').value, page:'0', size:'20', sort:'createdAt', order:'desc' }); const r = await api('/api/projects?'+q.toString()); renderList(r, '#projTableWrap', ['id','name','description','createdAt'], (row)=>{ $('#projId').value=row.id; $('#projName').value=row.name; $('#projDesc').value=row.description||''; }); });
-    $('#projCreate').addEventListener('click', async ()=>{ if(!requireAuth()) return; const r = await api('/api/projects',{method:'POST', body:{ name: $('#projName').value, description: $('#projDesc').value }}); renderOut(r,'#projectsOut'); if(r.ok) toast('项目已创建'); });
+    $('#projCreate').addEventListener('click', async ()=>{
+      if(!requireAuth()) return;
+      const r = await api('/api/projects',{method:'POST', body:{ name: $('#projName').value, description: $('#projDesc').value }});
+      renderOut(r,'#projectsOut');
+      if(r.ok){
+        toast('项目已创建');
+        const id = r.data && r.data.id; if(id){ $('#projId').value = id; $('#projName').value = r.data.name||$('#projName').value; $('#projDesc').value = r.data.description||$('#projDesc').value; const r2 = await api('/api/projects/'+id); renderOut(r2,'#projectsOut'); }
+        const btn = $('#projList'); if(btn) btn.click();
+      }
+    });
     $('#projGet').addEventListener('click', async ()=>{
       // 查询：不依赖只读的 ID，按名称相关输入检索，并用表格展示
       const name = ($('#projName').value || $('#projQ').value || '').trim();
@@ -189,7 +198,16 @@
 
     // tasks
     $('#taskList').addEventListener('click', async ()=>{ const p=new URLSearchParams({ q:$('#taskQ').value, projectId:$('#taskProjectId').value.trim(), status:$('#taskStatus').value, page:'0', size:'20', sort:'createdAt', order:'desc' }); const r=await api('/api/tasks?'+p.toString()); renderList(r,'#taskTableWrap',['id','projectId','name','status','createdAt'], (row)=>{ $('#taskId').value=row.id; $('#taskName').value=row.name; $('#taskStatus').value=row.status||''; $('#taskProjectId').value=row.projectId||''; }); });
-    $('#taskCreate').addEventListener('click', async ()=>{ if(!requireAuth()) return; const r=await api('/api/tasks',{method:'POST', body:{ projectId:$('#taskProjectId').value.trim(), name:$('#taskName').value }}); renderOut(r,'#tasksOut'); if(r.ok) toast('任务已创建'); });
+    $('#taskCreate').addEventListener('click', async ()=>{
+      if(!requireAuth()) return;
+      const r=await api('/api/tasks',{method:'POST', body:{ projectId:$('#taskProjectId').value.trim(), name:$('#taskName').value }});
+      renderOut(r,'#tasksOut');
+      if(r.ok){
+        toast('任务已创建');
+        const id = r.data && r.data.id; if(id){ $('#taskId').value = id; $('#taskName').value = r.data.name||$('#taskName').value; $('#taskStatus').value = r.data.status||$('#taskStatus').value; const r2 = await api('/api/tasks/'+id); renderOut(r2,'#tasksOut'); }
+        const btn = $('#taskList'); if(btn) btn.click();
+      }
+    });
     $('#taskGet').addEventListener('click', async ()=>{
       // 查询：使用名称/项目ID/状态等非 ID 条件，表格展示
       const name = ($('#taskName').value || $('#taskQ').value || '').trim();
@@ -231,7 +249,17 @@
     });
 
     // time entries
-    $('#teCreate').addEventListener('click', async ()=>{ if(!requireAuth()) return; const body={ taskId:$('#teTaskId').value.trim(), userId:($('#teUserId').value.trim()||userIdFromAccess()), startedAt:($('#teStart').value||isoMinusHours(1)), endedAt:($('#teEnd').value||isoNow()), notes:$('#teNotes').value }; const r=await api('/api/time-entries',{method:'POST', body}); renderOut(r,'#teOut'); if(r.ok) toast('工时已创建'); });
+    $('#teCreate').addEventListener('click', async ()=>{
+      if(!requireAuth()) return;
+      const body={ taskId:$('#teTaskId').value.trim(), userId:($('#teUserId').value.trim()||userIdFromAccess()), startedAt:($('#teStart').value||isoMinusHours(1)), endedAt:($('#teEnd').value||isoNow()), notes:$('#teNotes').value };
+      const r=await api('/api/time-entries',{method:'POST', body});
+      renderOut(r,'#teOut');
+      if(r.ok){
+        toast('工时已创建');
+        const id = r.data && r.data.id; if(id){ $('#teId').value = id; const r2 = await api('/api/time-entries/'+id); renderOut(r2,'#teOut'); }
+        const btn = $('#teList'); if(btn) btn.click();
+      }
+    });
     $('#teGet').addEventListener('click', async ()=>{
       // 查询：使用 taskId/userId/time 窗口等非 ID 条件，表格展示
       const p=new URLSearchParams({ start:$('#teFilterStart').value, end:$('#teFilterEnd').value, taskId:$('#teTaskId').value.trim(), userId:$('#teUserId').value.trim(), page:'0', size:'20', sort:'startedAt', order:'desc' });

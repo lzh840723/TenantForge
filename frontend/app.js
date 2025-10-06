@@ -92,6 +92,7 @@
     });
     tbl.appendChild(tbody); return tbl;
   }
+  function isUuid(s){ return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(s).trim()); }
   function get(o, path){ try{ return path.split('.').reduce((x,k)=>(x||{})[k], o); }catch(e){ return undefined; } }
   function safe(v){ if(v==null) return ''; if(typeof v==='object') return JSON.stringify(v); return String(v); }
   function setActive(section){
@@ -132,7 +133,17 @@
     // projects
     $('#projList').addEventListener('click', async ()=>{ const q = new URLSearchParams({ q: $('#projQ').value, page:'0', size:'20', sort:'createdAt', order:'desc' }); const r = await api('/api/projects?'+q.toString()); renderList(r, '#projTableWrap', ['id','name','description','createdAt'], (row)=>{ $('#projId').value=row.id; $('#projName').value=row.name; $('#projDesc').value=row.description||''; }); });
     $('#projCreate').addEventListener('click', async ()=>{ const r = await api('/api/projects',{method:'POST', body:{ name: $('#projName').value, description: $('#projDesc').value }}); renderOut(r,'#projectsOut'); if(r.ok) toast('项目已创建'); });
-    $('#projGet').addEventListener('click', async ()=>{ const id=$('#projId').value.trim(); const r=await api('/api/projects/'+id); renderOut(r,'#projectsOut'); });
+    $('#projGet').addEventListener('click', async ()=>{
+      const raw=$('#projId').value.trim();
+      if(isUuid(raw)){
+        const r=await api('/api/projects/'+raw); renderOut(r,'#projectsOut'); return;
+      }
+      // 容错：非UUID时按名称模糊查询
+      const q = new URLSearchParams({ q: raw, page:'0', size:'10' });
+      const r = await api('/api/projects?'+q.toString());
+      if(r.ok){ renderList(r,'#projTableWrap',['id','name','description','createdAt'], (row)=>{ $('#projId').value=row.id; $('#projName').value=row.name; $('#projDesc').value=row.description||''; }); toast('已按名称查询，点击行可回填ID'); }
+      else { renderOut(r,'#projectsOut'); }
+    });
     $('#projUpdate').addEventListener('click', async ()=>{ const id=$('#projId').value.trim(); const r=await api('/api/projects/'+id,{method:'PUT', body:{name:$('#projName').value, description:$('#projDesc').value}}); renderOut(r,'#projectsOut'); if(r.ok) toast('项目已更新'); });
     $('#projDelete').addEventListener('click', async ()=>{ const id=$('#projId').value.trim(); const r=await api('/api/projects/'+id,{method:'DELETE'}); renderOut(r,'#projectsOut'); if(r.ok) toast('项目已删除'); });
 

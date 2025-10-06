@@ -143,14 +143,16 @@
     $('#projList').addEventListener('click', async ()=>{ const q = new URLSearchParams({ q: $('#projQ').value, page:'0', size:'20', sort:'createdAt', order:'desc' }); const r = await api('/api/projects?'+q.toString()); renderList(r, '#projTableWrap', ['id','name','description','createdAt'], (row)=>{ $('#projId').value=row.id; $('#projName').value=row.name; $('#projDesc').value=row.description||''; }); });
     $('#projCreate').addEventListener('click', async ()=>{ if(!requireAuth()) return; const r = await api('/api/projects',{method:'POST', body:{ name: $('#projName').value, description: $('#projDesc').value }}); renderOut(r,'#projectsOut'); if(r.ok) toast('项目已创建'); });
     $('#projGet').addEventListener('click', async ()=>{
-      // 查询：不依赖只读的 ID，按其他输入条件检索，并仅刷新“表示区域”
+      // 查询：不依赖只读的 ID，按名称相关输入检索，并用表格展示
       const name = ($('#projName').value || $('#projQ').value || '').trim();
       const p = new URLSearchParams({ q: name, page:'0', size:'20', sort:'createdAt', order:'desc' });
       const r = await api('/api/projects?'+p.toString());
       if(!r.ok){ renderOut(r,'#projectsOut'); return; }
-      const arr = Array.isArray(r.data?.content) ? r.data.content : (Array.isArray(r.data)? r.data : (r.data? [r.data]: []));
-      const out = (arr.length===0) ? [] : (arr.length===1 ? arr[0] : arr);
-      renderOut({ok:true,status:200,data:out}, '#projectsOut');
+      const wrap = '#projTableWrap';
+      const data = Array.isArray(r.data?.content) ? r.data.content : (Array.isArray(r.data)? r.data : []);
+      if(data.length === 0){ const el=document.querySelector(wrap); if(el) el.innerHTML='<div class="muted">未找到匹配记录</div>'; renderOut({ok:true,status:200,data:[]}, '#projectsOut'); return; }
+      renderList({ok:true,status:200,data}, wrap, ['id','name','description','createdAt'], (row)=>{ $('#projId').value=row.id; $('#projName').value=row.name; $('#projDesc').value=row.description||''; });
+      renderOut({ok:true,status:200,data}, '#projectsOut');
     });
     $('#projUpdate').addEventListener('click', async ()=>{
       if(!requireAuth()) return;
@@ -176,14 +178,16 @@
     $('#taskList').addEventListener('click', async ()=>{ const p=new URLSearchParams({ q:$('#taskQ').value, projectId:$('#taskProjectId').value.trim(), status:$('#taskStatus').value, page:'0', size:'20', sort:'createdAt', order:'desc' }); const r=await api('/api/tasks?'+p.toString()); renderList(r,'#taskTableWrap',['id','projectId','name','status','createdAt'], (row)=>{ $('#taskId').value=row.id; $('#taskName').value=row.name; $('#taskStatus').value=row.status||''; $('#taskProjectId').value=row.projectId||''; }); });
     $('#taskCreate').addEventListener('click', async ()=>{ if(!requireAuth()) return; const r=await api('/api/tasks',{method:'POST', body:{ projectId:$('#taskProjectId').value.trim(), name:$('#taskName').value }}); renderOut(r,'#tasksOut'); if(r.ok) toast('任务已创建'); });
     $('#taskGet').addEventListener('click', async ()=>{
-      // 查询：优先使用非 ID 条件（名称、项目ID、状态），返回结果到“表示区域”
+      // 查询：使用名称/项目ID/状态等非 ID 条件，表格展示
       const name = ($('#taskName').value || $('#taskQ').value || '').trim();
       const p = new URLSearchParams({ q:name, projectId:$('#taskProjectId').value.trim(), status:$('#taskStatus').value.trim(), page:'0', size:'20', sort:'createdAt', order:'desc' });
       const r = await api('/api/tasks?'+p.toString());
       if(!r.ok){ renderOut(r,'#tasksOut'); return; }
-      const arr = Array.isArray(r.data?.content) ? r.data.content : (Array.isArray(r.data)? r.data : (r.data? [r.data]: []));
-      const out = (arr.length===0) ? [] : (arr.length===1 ? arr[0] : arr);
-      renderOut({ok:true,status:200,data:out}, '#tasksOut');
+      const wrap = '#taskTableWrap';
+      const data = Array.isArray(r.data?.content) ? r.data.content : (Array.isArray(r.data)? r.data : []);
+      if(data.length === 0){ const el=document.querySelector(wrap); if(el) el.innerHTML='<div class="muted">未找到匹配记录</div>'; renderOut({ok:true,status:200,data:[]}, '#tasksOut'); return; }
+      renderList({ok:true,status:200,data}, wrap, ['id','projectId','name','status','createdAt'], (row)=>{ $('#taskId').value=row.id; $('#taskName').value=row.name; $('#taskStatus').value=row.status||''; $('#taskProjectId').value=row.projectId||''; });
+      renderOut({ok:true,status:200,data}, '#tasksOut');
     });
     $('#taskUpdate').addEventListener('click', async ()=>{
       if(!requireAuth()) return;
@@ -205,13 +209,15 @@
     // time entries
     $('#teCreate').addEventListener('click', async ()=>{ if(!requireAuth()) return; const body={ taskId:$('#teTaskId').value.trim(), userId:($('#teUserId').value.trim()||userIdFromAccess()), startedAt:($('#teStart').value||isoMinusHours(1)), endedAt:($('#teEnd').value||isoNow()), notes:$('#teNotes').value }; const r=await api('/api/time-entries',{method:'POST', body}); renderOut(r,'#teOut'); if(r.ok) toast('工时已创建'); });
     $('#teGet').addEventListener('click', async ()=>{
-      // 查询：使用 taskId/userId/time 窗口等非 ID 条件
+      // 查询：使用 taskId/userId/time 窗口等非 ID 条件，表格展示
       const p=new URLSearchParams({ start:$('#teFilterStart').value, end:$('#teFilterEnd').value, taskId:$('#teTaskId').value.trim(), userId:$('#teUserId').value.trim(), page:'0', size:'20', sort:'startedAt', order:'desc' });
       const r = await api('/api/time-entries?'+p.toString());
       if(!r.ok){ renderOut(r,'#teOut'); return; }
-      const arr = Array.isArray(r.data?.content) ? r.data.content : (Array.isArray(r.data)? r.data : (r.data? [r.data]: []));
-      const out = (arr.length===0) ? [] : (arr.length===1 ? arr[0] : arr);
-      renderOut({ok:true,status:200,data:out}, '#teOut');
+      const wrap = '#teTableWrap';
+      const data = Array.isArray(r.data?.content) ? r.data.content : (Array.isArray(r.data)? r.data : []);
+      if(data.length === 0){ const el=document.querySelector(wrap); if(el) el.innerHTML='<div class="muted">未找到匹配记录</div>'; renderOut({ok:true,status:200,data:[]}, '#teOut'); return; }
+      renderList({ok:true,status:200,data}, wrap, ['id','taskId','userId','startedAt','endedAt','notes'], (row)=>{ $('#teId').value=row.id; $('#teTaskId').value=row.taskId||''; $('#teUserId').value=row.userId||''; $('#teStart').value=row.startedAt||''; $('#teEnd').value=row.endedAt||''; $('#teNotes').value=row.notes||''; });
+      renderOut({ok:true,status:200,data}, '#teOut');
     });
     $('#teUpdate').addEventListener('click', async ()=>{
       if(!requireAuth()) return;

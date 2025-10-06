@@ -58,7 +58,14 @@
   }
 
   function requireAuth(){
-    if(!state.access){ toast('请先在“认证”页登录/注册获取令牌','err'); return false; }
+    if(!state.access){
+      toast('请先登录后再执行该操作','err');
+      const ao = document.querySelector('#authOut');
+      if(ao){ ao.className='err note'; ao.textContent='请先登录（在左侧“认证”页注册或登录）'; }
+      try{ setActive('auth'); }catch(e){}
+      const email = document.querySelector('#email'); if(email) email.focus();
+      return false;
+    }
     return true;
   }
   function requireUuid(id){
@@ -140,7 +147,7 @@
     $('#btnCopyAccess').addEventListener('click', async ()=>{ if(!state.access){ toast('无 Access Token'); return; } await navigator.clipboard.writeText(state.access); toast('已复制 Access'); });
 
     // projects
-    $('#projList').addEventListener('click', async ()=>{ const q = new URLSearchParams({ q: $('#projQ').value, page:'0', size:'20', sort:'createdAt', order:'desc' }); const r = await api('/api/projects?'+q.toString()); renderList(r, '#projTableWrap', ['id','name','description','createdAt'], (row)=>{ $('#projId').value=row.id; $('#projName').value=row.name; $('#projDesc').value=row.description||''; }); });
+    $('#projList').addEventListener('click', async ()=>{ if(!requireAuth()) return; const q = new URLSearchParams({ q: $('#projQ').value, page:'0', size:'20', sort:'createdAt', order:'desc' }); const r = await api('/api/projects?'+q.toString()); renderList(r, '#projTableWrap', ['id','name','description','createdAt'], (row)=>{ $('#projId').value=row.id; $('#projName').value=row.name; $('#projDesc').value=row.description||''; }); });
     $('#projCreate').addEventListener('click', async ()=>{
       if(!requireAuth()) return;
       const r = await api('/api/projects',{method:'POST', body:{ name: $('#projName').value, description: $('#projDesc').value }});
@@ -151,7 +158,7 @@
         const btn = $('#projList'); if(btn) btn.click();
       }
     });
-    $('#projGet').addEventListener('click', async ()=>{
+    $('#projGet').addEventListener('click', async ()=>{ if(!requireAuth()) return;
       // 查询：不依赖只读的 ID，按名称相关输入检索，并用表格展示
       const name = ($('#projName').value || $('#projQ').value || '').trim();
       const p = new URLSearchParams({ q: name, page:'0', size:'20', sort:'createdAt', order:'desc' });
@@ -197,7 +204,7 @@
     $('#projCopyId').addEventListener('click', async ()=>{ const id=$('#projId').value.trim(); if(!isUuid(id)){ toast('尚未选择项目','err'); return; } await navigator.clipboard.writeText(id); toast('已复制项目ID'); });
 
     // tasks
-    $('#taskList').addEventListener('click', async ()=>{ const p=new URLSearchParams({ q:$('#taskQ').value, projectId:$('#taskProjectId').value.trim(), status:$('#taskStatus').value, page:'0', size:'20', sort:'createdAt', order:'desc' }); const r=await api('/api/tasks?'+p.toString()); renderList(r,'#taskTableWrap',['id','projectId','name','status','createdAt'], (row)=>{ $('#taskId').value=row.id; $('#taskName').value=row.name; $('#taskStatus').value=row.status||''; $('#taskProjectId').value=row.projectId||''; }); });
+    $('#taskList').addEventListener('click', async ()=>{ if(!requireAuth()) return; const p=new URLSearchParams({ q:$('#taskQ').value, projectId:$('#taskProjectId').value.trim(), status:$('#taskStatus').value, page:'0', size:'20', sort:'createdAt', order:'desc' }); const r=await api('/api/tasks?'+p.toString()); renderList(r,'#taskTableWrap',['id','projectId','name','status','createdAt'], (row)=>{ $('#taskId').value=row.id; $('#taskName').value=row.name; $('#taskStatus').value=row.status||''; $('#taskProjectId').value=row.projectId||''; }); });
     $('#taskCreate').addEventListener('click', async ()=>{
       if(!requireAuth()) return;
       const r=await api('/api/tasks',{method:'POST', body:{ projectId:$('#taskProjectId').value.trim(), name:$('#taskName').value }});
@@ -208,7 +215,7 @@
         const btn = $('#taskList'); if(btn) btn.click();
       }
     });
-    $('#taskGet').addEventListener('click', async ()=>{
+    $('#taskGet').addEventListener('click', async ()=>{ if(!requireAuth()) return;
       // 查询：使用名称/项目ID/状态等非 ID 条件，表格展示
       const name = ($('#taskName').value || $('#taskQ').value || '').trim();
       const p = new URLSearchParams({ q:name, projectId:$('#taskProjectId').value.trim(), status:$('#taskStatus').value.trim(), page:'0', size:'20', sort:'createdAt', order:'desc' });
@@ -260,7 +267,7 @@
         const btn = $('#teList'); if(btn) btn.click();
       }
     });
-    $('#teGet').addEventListener('click', async ()=>{
+    $('#teGet').addEventListener('click', async ()=>{ if(!requireAuth()) return;
       // 查询：使用 taskId/userId/time 窗口等非 ID 条件，表格展示
       const p=new URLSearchParams({ start:$('#teFilterStart').value, end:$('#teFilterEnd').value, taskId:$('#teTaskId').value.trim(), userId:$('#teUserId').value.trim(), page:'0', size:'20', sort:'startedAt', order:'desc' });
       const r = await api('/api/time-entries?'+p.toString());
@@ -301,11 +308,11 @@
       $('#teId').value='';
       const btn=$('#teList'); if(btn) btn.click();
     });
-    $('#teList').addEventListener('click', async ()=>{ const p=new URLSearchParams({ start:$('#teFilterStart').value, end:$('#teFilterEnd').value, taskId:$('#teTaskId').value.trim(), userId:$('#teUserId').value.trim(), page:'0', size:'20', sort:'startedAt', order:'desc' }); const r=await api('/api/time-entries?'+p.toString()); renderList(r,'#teTableWrap',['id','taskId','userId','startedAt','endedAt','notes'], (row)=>{ $('#teId').value=row.id; $('#teTaskId').value=row.taskId||''; $('#teUserId').value=row.userId||''; $('#teStart').value=row.startedAt||''; $('#teEnd').value=row.endedAt||''; $('#teNotes').value=row.notes||''; }); });
+    $('#teList').addEventListener('click', async ()=>{ if(!requireAuth()) return; const p=new URLSearchParams({ start:$('#teFilterStart').value, end:$('#teFilterEnd').value, taskId:$('#teTaskId').value.trim(), userId:$('#teUserId').value.trim(), page:'0', size:'20', sort:'startedAt', order:'desc' }); const r=await api('/api/time-entries?'+p.toString()); renderList(r,'#teTableWrap',['id','taskId','userId','startedAt','endedAt','notes'], (row)=>{ $('#teId').value=row.id; $('#teTaskId').value=row.taskId||''; $('#teUserId').value=row.userId||''; $('#teStart').value=row.startedAt||''; $('#teEnd').value=row.endedAt||''; $('#teNotes').value=row.notes||''; }); });
 
     // reports
-    $('#rJson').addEventListener('click', async ()=>{ const p=getReportParams(); const r=await api('/api/reports/time?'+p.toString()); renderOut(r,'#reportOut'); });
-    $('#rCsv').addEventListener('click', async ()=>{ const p=getReportParams(); p.set('format','csv'); const u=normalizeBaseStrict(state.base)+'/api/reports/time?'+p.toString(); window.open(u,'_blank'); });
+    $('#rJson').addEventListener('click', async ()=>{ if(!requireAuth()) return; const p=getReportParams(); const r=await api('/api/reports/time?'+p.toString()); renderOut(r,'#reportOut'); });
+    $('#rCsv').addEventListener('click', async ()=>{ if(!requireAuth()) return; const p=getReportParams(); p.set('format','csv'); const u=normalizeBaseStrict(state.base)+'/api/reports/time?'+p.toString(); window.open(u,'_blank'); });
 
     // health
     $('#btnHealth').addEventListener('click', async ()=>{ const r=await api('/api/health'); renderOut(r,'#healthOut'); if(r.ok) toast('健康：OK'); });

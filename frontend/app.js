@@ -176,13 +176,14 @@
       const id=$('#projId').value.trim();
       if(!requireUuid(id)) return;
       const r=await api('/api/projects/'+id,{method:'DELETE'});
-      renderOut(r,'#projectsOut');
-      if(r.ok){
-        toast('项目已删除');
-        // 清空已删除的ID并刷新列表（保留当前筛选条件）
-        $('#projId').value='';
-        const btn=$('#projList'); if(btn) btn.click();
-      }
+      if(!r.ok){ renderOut(r,'#projectsOut'); return; }
+      // 成功删除时，用友好的提示替代 HTTP 204
+      const el = document.querySelector('#projectsOut');
+      if(el){ el.className='ok note'; el.textContent='✅ 已删除'; }
+      toast('项目已删除');
+      // 清空已删除的ID并刷新列表（保留当前筛选条件）
+      $('#projId').value='';
+      const btn=$('#projList'); if(btn) btn.click();
     });
     $('#projCopyId').addEventListener('click', async ()=>{ const id=$('#projId').value.trim(); if(!isUuid(id)){ toast('尚未选择项目','err'); return; } await navigator.clipboard.writeText(id); toast('已复制项目ID'); });
 
@@ -221,12 +222,12 @@
       const id=$('#taskId').value.trim();
       if(!requireUuid(id)) return;
       const r=await api('/api/tasks/'+id,{method:'DELETE'});
-      renderOut(r,'#tasksOut');
-      if(r.ok){
-        toast('任务已删除');
-        $('#taskId').value='';
-        const btn=$('#taskList'); if(btn) btn.click();
-      }
+      if(!r.ok){ renderOut(r,'#tasksOut'); return; }
+      const el = document.querySelector('#tasksOut');
+      if(el){ el.className='ok note'; el.textContent='✅ 已删除'; }
+      toast('任务已删除');
+      $('#taskId').value='';
+      const btn=$('#taskList'); if(btn) btn.click();
     });
 
     // time entries
@@ -265,12 +266,12 @@
       const id=$('#teId').value.trim();
       if(!requireUuid(id)) return;
       const r=await api('/api/time-entries/'+id,{method:'DELETE'});
-      renderOut(r,'#teOut');
-      if(r.ok){
-        toast('工时已删除');
-        $('#teId').value='';
-        const btn=$('#teList'); if(btn) btn.click();
-      }
+      if(!r.ok){ renderOut(r,'#teOut'); return; }
+      const el = document.querySelector('#teOut');
+      if(el){ el.className='ok note'; el.textContent='✅ 已删除'; }
+      toast('工时已删除');
+      $('#teId').value='';
+      const btn=$('#teList'); if(btn) btn.click();
     });
     $('#teList').addEventListener('click', async ()=>{ const p=new URLSearchParams({ start:$('#teFilterStart').value, end:$('#teFilterEnd').value, taskId:$('#teTaskId').value.trim(), userId:$('#teUserId').value.trim(), page:'0', size:'20', sort:'startedAt', order:'desc' }); const r=await api('/api/time-entries?'+p.toString()); renderList(r,'#teTableWrap',['id','taskId','userId','startedAt','endedAt','notes'], (row)=>{ $('#teId').value=row.id; $('#teTaskId').value=row.taskId||''; $('#teUserId').value=row.userId||''; $('#teStart').value=row.startedAt||''; $('#teEnd').value=row.endedAt||''; $('#teNotes').value=row.notes||''; }); });
 

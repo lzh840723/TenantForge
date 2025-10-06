@@ -125,6 +125,21 @@
     if(userId) p.set('userId', userId);
     return p;
   }
+
+  // Refresh helpers: use current filters to刷新“表示区域”
+  async function refreshProjectsOutFromFilters(){
+    const q = new URLSearchParams({ q: $('#projQ').value, page:'0', size:'10', sort:'createdAt', order:'desc' });
+    const r = await api('/api/projects?'+q.toString()); renderOut(r,'#projectsOut');
+  }
+  async function refreshTasksOutFromFilters(){
+    const pid = ($('#taskProjectId').value.trim() || lastProjectId());
+    const p = new URLSearchParams({ q:$('#taskQ').value, projectId:pid, status:$('#taskStatus').value.trim(), page:'0', size:'10', sort:'createdAt', order:'desc' });
+    const r = await api('/api/tasks?'+p.toString()); renderOut(r,'#tasksOut');
+  }
+  async function refreshTeOutFromFilters(){
+    const p = new URLSearchParams({ start:$('#teFilterStart').value, end:$('#teFilterEnd').value, taskId:$('#teTaskId').value.trim(), userId:$('#teUserId').value.trim(), page:'0', size:'10', sort:'startedAt', order:'desc' });
+    const r = await api('/api/time-entries?'+p.toString()); renderOut(r,'#teOut');
+  }
   function isUuid(s){ return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(s).trim()); }
   function get(o, path){ try{ return path.split('.').reduce((x,k)=>(x||{})[k], o); }catch(e){ return undefined; } }
   function safe(v){ if(v==null) return ''; if(typeof v==='object') return JSON.stringify(v); return String(v); }
@@ -205,6 +220,7 @@
         const r2 = await api('/api/projects/'+id);
         renderOut(r2,'#projectsOut');
         const btn = $('#projList'); if(btn) btn.click();
+        await refreshProjectsOutFromFilters();
       }
     });
     $('#projDelete').addEventListener('click', async ()=>{
@@ -220,6 +236,7 @@
       // 清空已删除的ID并刷新列表（保留当前筛选条件）
       $('#projId').value='';
       const btn=$('#projList'); if(btn) btn.click();
+      await refreshProjectsOutFromFilters();
     });
     $('#projCopyId').addEventListener('click', async ()=>{ const id=$('#projId').value.trim(); if(!isUuid(id)){ toast('尚未选择项目','err'); return; } await navigator.clipboard.writeText(id); toast('已复制项目ID'); });
 
@@ -235,6 +252,7 @@
         toast('任务已创建');
         const id = r.data && r.data.id; if(id){ $('#taskId').value = id; $('#taskName').value = r.data.name||$('#taskName').value; $('#taskStatus').value = r.data.status||$('#taskStatus').value; $('#taskProjectId').value = r.data.projectId || pid; const r2 = await api('/api/tasks/'+id); renderOut(r2,'#tasksOut'); }
         const btn = $('#taskList'); if(btn) btn.click();
+        await refreshTasksOutFromFilters();
       }
     });
     $('#taskGet').addEventListener('click', async ()=>{ if(!requireAuth()) return;
@@ -262,6 +280,7 @@
         const r2 = await api('/api/tasks/'+id);
         renderOut(r2,'#tasksOut');
         const btn = $('#taskList'); if(btn) btn.click();
+        await refreshTasksOutFromFilters();
       }
     });
     $('#taskDelete').addEventListener('click', async ()=>{
@@ -275,6 +294,7 @@
       toast('任务已删除');
       $('#taskId').value='';
       const btn=$('#taskList'); if(btn) btn.click();
+      await refreshTasksOutFromFilters();
     });
     $('#taskCopyId').addEventListener('click', async ()=>{ const id=$('#taskId').value.trim(); if(!isUuid(id)){ toast('尚未选择任务','err'); return; } await navigator.clipboard.writeText(id); toast('已复制任务ID'); });
 
@@ -317,6 +337,7 @@
         const r2 = await api('/api/time-entries/'+id);
         renderOut(r2,'#teOut');
         const btn = $('#teList'); if(btn) btn.click();
+        await refreshTeOutFromFilters();
       }
     });
     $('#teDelete').addEventListener('click', async ()=>{
@@ -330,6 +351,7 @@
       toast('工时已删除');
       $('#teId').value='';
       const btn=$('#teList'); if(btn) btn.click();
+      await refreshTeOutFromFilters();
     });
     $('#teCopyId').addEventListener('click', async ()=>{ const id=$('#teId').value.trim(); if(!isUuid(id)){ toast('尚未选择工时','err'); return; } await navigator.clipboard.writeText(id); toast('已复制工时ID'); });
     $('#teList').addEventListener('click', async ()=>{ if(!requireAuth()) return; const p=new URLSearchParams({ start:$('#teFilterStart').value, end:$('#teFilterEnd').value, taskId:$('#teTaskId').value.trim(), userId:$('#teUserId').value.trim(), page:'0', size:'20', sort:'startedAt', order:'desc' }); const r=await api('/api/time-entries?'+p.toString()); renderList(r,'#teTableWrap',['id','taskId','userId','startedAt','endedAt','notes'], (row)=>{ $('#teId').value=row.id; $('#teTaskId').value=row.taskId||''; $('#teUserId').value=row.userId||''; $('#teStart').value=row.startedAt||''; $('#teEnd').value=row.endedAt||''; $('#teNotes').value=row.notes||''; }); });

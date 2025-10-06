@@ -33,16 +33,11 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-m2-
 
-      - name: Run backend tests (push)
+      - name: Build backend (skip tests on push)
         if: github.event_name != 'pull_request'
         env:
-          SPRING_DATASOURCE_URL: ${{ secrets.SPRING_DATASOURCE_URL }}
-          SPRING_DATASOURCE_USERNAME: ${{ secrets.SPRING_DATASOURCE_USERNAME }}
-          SPRING_DATASOURCE_PASSWORD: ${{ secrets.SPRING_DATASOURCE_PASSWORD }}
-          DIRECT_CONNECTION: ${{ secrets.DIRECT_CONNECTION }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
           JAVA_TOOL_OPTIONS: -Djava.net.preferIPv4Stack=true
-        run: mvn -f backend/pom.xml -Dmaven.wagon.http.retryHandler.count=5 -B -Djacoco.skip=true -DskipITs=true -DfailIfNoTests=false clean test
+        run: mvn -f backend/pom.xml -Dmaven.wagon.http.retryHandler.count=5 -B -DskipTests=true clean package
 
       - name: Run backend tests with coverage (PR)
         if: github.event_name == 'pull_request'
@@ -222,7 +217,7 @@ jobs:
           if [[ "$VERCEL_TOKEN" == *%* ]]; then
             echo "VERCEL_TOKEN contains unsupported characters; skipping frontend deploy" && exit 0
           fi
-          ARGS=("--token" "$VERCEL_TOKEN" "--prebuilt" "--yes")
+          ARGS=("--token" "$VERCEL_TOKEN" "--yes")
           # main -> production; other branches -> preview
           if [ "${{ github.ref }}" = "refs/heads/main" ]; then
             ARGS+=("--prod")

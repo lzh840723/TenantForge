@@ -1,438 +1,146 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TenantForge SaaS Starter</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TenantForge 前端控制台</title>
   <link rel="stylesheet" href="styles.css" />
-  <style>
-    .container{max-width:760px;margin:40px auto;padding:0 16px}
-    .row{margin:12px 0}
-    input,button{padding:8px 10px}
-    input{width:100%;box-sizing:border-box}
-    code{background:#f5f5f5;padding:2px 4px;border-radius:3px}
-    .muted{color:#666}
-    .ok{color:green}
-    .err{color:#b00}
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-    pre{background:#f7f7f7;padding:8px;overflow:auto}
-  </style>
   <script src="config.js"></script>
-  <script>
-    // Resolve a sensible default Base URL with multiple fallbacks so we don't have to hardcode.
-    const defaultBase = (() => {
-      try {
-        const params = new URLSearchParams(window.location.search);
-        const q = params.get('base') || params.get('backend') || params.get('url');
-        if (q) return q;
-      } catch (e) {}
-      const meta = document.querySelector('meta[name="backend-base-url"]');
-      if (meta && meta.content) return meta.content;
-      if (typeof window !== 'undefined' && window.BACKEND_BASE_URL) return window.BACKEND_BASE_URL;
-      return 'http://localhost:8080';
-    })();
-
-    function getBase(){ return localStorage.getItem('backendBaseUrl') || defaultBase; }
-    function setBase(v){ localStorage.setItem('backendBaseUrl', v); }
-    function getAccess(){ return localStorage.getItem('accessToken') || ''; }
-    function getRefresh(){ return localStorage.getItem('refreshToken') || ''; }
-    function setTokens(a, r){
-      if(a) localStorage.setItem('accessToken', a);
-      if(r) localStorage.setItem('refreshToken', r);
-      renderTokenInfo();
-    }
-    function b64urlToUtf8(s){
-      try{
-        s = s.replace(/-/g, '+').replace(/_/g, '/');
-        const pad = s.length % 4 ? 4 - (s.length % 4) : 0;
-        return decodeURIComponent(escape(atob(s + '='.repeat(pad))));
-      }catch(e){ return ''; }
-    }
-    function decodeJwt(tok){
-      if(!tok || tok.split('.').length < 2) return null;
-      try{ return JSON.parse(b64urlToUtf8(tok.split('.')[1])); }catch(e){ return null; }
-    }
-    function getUserIdFromToken(){
-      const c = decodeJwt(getAccess());
-      return c && c.sub ? c.sub : '';
-    }
-    async function req(path, method='GET', body=null, token=null, extraHeaders={}){
-      const headers = {'Content-Type':'application/json', ...extraHeaders};
-      const t = token || getAccess();
-      if(t){ headers['Authorization'] = 'Bearer '+t; }
-      const resp = await fetch(getBase()+path, {
-        method,
-        headers,
-        body: body?JSON.stringify(body):null
-      });
-      const text = await resp.text();
-      let data; try{ data = JSON.parse(text); } catch(e){ data = text; }
-      return {ok: resp.ok, status: resp.status, data};
-    }
-    async function onRegister(){
-      const tenantName = document.getElementById('tenantName').value;
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
-      const displayName = document.getElementById('displayName').value;
-      const btn = document.getElementById('registerBtn') || {disabled:false,textContent:''};
-      btn.disabled = true; btn.textContent = 'Registering...';
-      try {
-        const r = await req('/api/auth/register','POST',{tenantName,email,password,displayName});
-        if(r.ok){
-          setTokens(r.data.accessToken, r.data.refreshToken);
-          const el = document.getElementById('registerOut');
-          el.className = 'ok';
-          el.textContent = '✅ Registered. Tokens stored。可继续测试受保护接口。';
-        } else {
-          show('registerOut', r);
-        }
-      } finally {
-        btn.disabled = false; btn.textContent = 'Register';
-      }
-    }
-    async function onLogin(){
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
-      const btn = document.getElementById('loginBtn') || {disabled:false,textContent:''};
-      btn.disabled = true; btn.textContent = 'Logging in...';
-      try {
-        const r = await req('/api/auth/login','POST',{email,password});
-        if(r.ok){
-          setTokens(r.data.accessToken, r.data.refreshToken);
-          const el = document.getElementById('loginOut');
-          el.className = 'ok';
-          el.textContent = '✅ 登录成功，令牌已保存。';
-        } else {
-          show('loginOut', r);
-        }
-      } finally {
-        btn.disabled = false; btn.textContent = 'Login';
-      }
-    }
-    async function onProjects(){
-      const token = localStorage.getItem('accessToken');
-      const r = await req('/api/projects','GET',null, token);
-      show('projectsOut', r);
-    }
-    function normalizeBase(v){
-      if(!v) return v;
-      let s = v.trim();
-      if(!/^https?:\/\//i.test(s)) s = 'https://' + s; // auto-prepend scheme
-      s = s.replace(/\/$/, '');
-      return s;
-    }
-    function onBase(){
-      const raw = document.getElementById('base').value;
-      const v = normalizeBase(raw);
-      setBase(v);
-      document.getElementById('baseNow').textContent=getBase();
-    }
-    async function onRefresh(){
-      const rt = getRefresh();
-      const out = document.getElementById('authOut');
-      if(!rt){ out.className='err'; out.textContent='无刷新令牌'; return; }
-      const r = await req('/api/auth/refresh','POST',{refreshToken: rt}, null,
-        {'Authorization': undefined});
-      if(r.ok){
-        setTokens(r.data.accessToken, r.data.refreshToken);
-        out.className='ok'; out.textContent='✅ 刷新成功';
-      } else {
-        show('authOut', r);
-      }
-    }
-    function logout(){
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
-      renderTokenInfo();
-      document.getElementById('authOut').textContent='';
-    }
-    function show(id, r){
-      const el = document.getElementById(id);
-      el.className = r.ok? 'ok' : 'err';
-      el.textContent = 'HTTP '+r.status+'\n'
-        + (typeof r.data==='string'? r.data : JSON.stringify(r.data,null,2));
-    }
-    window.addEventListener('DOMContentLoaded', ()=>{
-      // Persist default if nothing saved yet and default looks non-local
-      const saved = localStorage.getItem('backendBaseUrl');
-      if(!saved && defaultBase && defaultBase !== 'http://localhost:8080'){
-        setBase(defaultBase);
-      }
-      document.getElementById('baseNow').textContent=getBase();
-      renderTokenInfo();
-    });
-    function renderTokenInfo(){
-      const acc = getAccess();
-      const ref = getRefresh();
-      const accC = decodeJwt(acc) || {};
-      const refC = decodeJwt(ref) || {};
-      const s = [];
-      if(acc){ s.push('access.sub='+ (accC.sub||'') ); }
-      if(accC.exp){ s.push('access.exp='+ new Date(accC.exp*1000).toISOString()); }
-      if(accC.tenant_id){ s.push('tenant_id='+accC.tenant_id); }
-      if(ref){ s.push('refresh.exp='+ (refC.exp? new Date(refC.exp*1000).toISOString() : '')); }
-      document.getElementById('tokenInfo').textContent = s.join(' | ');
-      document.getElementById('userIdDefault').textContent = getUserIdFromToken()||'-';
-    }
-
-    // ----- Projects -----
-    async function onProjectsCreate(){
-      const name = document.getElementById('projName').value;
-      const description = document.getElementById('projDesc').value;
-      const r = await req('/api/projects','POST',{name, description});
-      show('projectsOut', r);
-    }
-    async function onProjectsGet(){
-      const id = document.getElementById('projId').value.trim();
-      const r = await req('/api/projects/'+id,'GET');
-      show('projectsOut', r);
-    }
-    async function onProjectsUpdate(){
-      const id = document.getElementById('projId').value.trim();
-      const name = document.getElementById('projName').value;
-      const description = document.getElementById('projDesc').value;
-      const r = await req('/api/projects/'+id,'PUT',{name, description});
-      show('projectsOut', r);
-    }
-    async function onProjectsDelete(){
-      const id = document.getElementById('projId').value.trim();
-      const r = await req('/api/projects/'+id,'DELETE');
-      show('projectsOut', r);
-    }
-    async function onProjectsList(){
-      const q = new URLSearchParams({
-        q: document.getElementById('projQ').value,
-        page: '0', size: '10', sort: 'createdAt', order: 'desc'
-      }).toString();
-      const r = await req('/api/projects?'+q, 'GET');
-      show('projectsOut', r);
-    }
-
-    // ----- Tasks -----
-    async function onTasksCreate(){
-      const projectId = document.getElementById('taskProjectId').value.trim();
-      const name = document.getElementById('taskName').value;
-      const r = await req('/api/tasks','POST',{projectId, name});
-      show('tasksOut', r);
-    }
-    async function onTasksGet(){
-      const id = document.getElementById('taskId').value.trim();
-      const r = await req('/api/tasks/'+id,'GET');
-      show('tasksOut', r);
-    }
-    async function onTasksUpdate(){
-      const id = document.getElementById('taskId').value.trim();
-      const name = document.getElementById('taskName').value;
-      const status = document.getElementById('taskStatus').value || 'OPEN';
-      const r = await req('/api/tasks/'+id,'PUT',{name, status});
-      show('tasksOut', r);
-    }
-    async function onTasksDelete(){
-      const id = document.getElementById('taskId').value.trim();
-      const r = await req('/api/tasks/'+id,'DELETE');
-      show('tasksOut', r);
-    }
-    async function onTasksList(){
-      const p = new URLSearchParams({
-        q: document.getElementById('taskQ').value,
-        projectId: document.getElementById('taskProjectId').value.trim(),
-        status: document.getElementById('taskStatus').value,
-        page: '0', size: '10', sort: 'createdAt', order: 'desc'
-      });
-      const r = await req('/api/tasks?'+p.toString(),'GET');
-      show('tasksOut', r);
-    }
-
-    // ----- Time Entries -----
-    function isoNow(){ return new Date().toISOString(); }
-    function isoMinusHours(h){ return new Date(Date.now()-h*3600*1000).toISOString(); }
-    async function onTECreate(){
-      const taskId = document.getElementById('teTaskId').value.trim();
-      const userId = document.getElementById('teUserId').value.trim() || getUserIdFromToken();
-      const startedAt = document.getElementById('teStart').value || isoMinusHours(1);
-      const endedAt = document.getElementById('teEnd').value || isoNow();
-      const notes = document.getElementById('teNotes').value;
-      const r = await req('/api/time-entries','POST',{
-        taskId, userId, startedAt, endedAt, notes
-      });
-      show('teOut', r);
-    }
-    async function onTEGet(){
-      const id = document.getElementById('teId').value.trim();
-      const r = await req('/api/time-entries/'+id,'GET');
-      show('teOut', r);
-    }
-    async function onTEUpdate(){
-      const id = document.getElementById('teId').value.trim();
-      const startedAt = document.getElementById('teStart').value || isoMinusHours(1);
-      const endedAt = document.getElementById('teEnd').value || isoNow();
-      const notes = document.getElementById('teNotes').value;
-      const r = await req('/api/time-entries/'+id,'PUT',{startedAt, endedAt, notes});
-      show('teOut', r);
-    }
-    async function onTEDelete(){
-      const id = document.getElementById('teId').value.trim();
-      const r = await req('/api/time-entries/'+id,'DELETE');
-      show('teOut', r);
-    }
-    async function onTEList(){
-      const p = new URLSearchParams({
-        start: document.getElementById('teFilterStart').value,
-        end: document.getElementById('teFilterEnd').value,
-        taskId: document.getElementById('teTaskId').value.trim(),
-        userId: document.getElementById('teUserId').value.trim(),
-        page: '0', size: '10', sort: 'startedAt', order: 'desc'
-      });
-      const r = await req('/api/time-entries?'+p.toString(),'GET');
-      show('teOut', r);
-    }
-
-    // ----- Reports -----
-    async function onReportJson(){
-      const p = getReportParams();
-      const r = await req('/api/reports/time?'+p.toString(),'GET');
-      show('reportOut', r);
-    }
-    async function onReportCsv(){
-      const p = getReportParams(); p.set('format','csv');
-      const r = await req('/api/reports/time?'+p.toString(),'GET',null,null,
-        {'Accept':'text/csv'});
-      show('reportOut', r);
-    }
-    function getReportParams(){
-      const period = document.getElementById('rPeriod').value || 'week';
-      const userId = document.getElementById('rUserId').value.trim();
-      const projectId = document.getElementById('rProjectId').value.trim();
-      const p = new URLSearchParams({period});
-      if(userId) p.set('userId', userId);
-      if(projectId) p.set('projectId', projectId);
-      return p;
-    }
-  </script>
 </head>
 <body>
-  <main class="container">
-    <h1>TenantForge SaaS Starter</h1>
-    <p class="muted">设置后端地址并注册/登录。当前后端：<code id="baseNow"></code></p>
-    <div class="row grid">
-      <input id="base" placeholder="Backend Base URL (e.g. https://xxx.up.railway.app)">
-      <button onclick="onBase()">Save Base URL</button>
-    </div>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">TenantForge 控制台</div>
+      <div class="muted note">当前后端：<code id="baseNow"></code></div>
+      <div class="row" style="margin-top:10px">
+        <input id="base" placeholder="https://xxx.up.railway.app" />
+        <button class="secondary" id="btnSaveBase">保存</button>
+      </div>
+      <nav class="nav" id="nav">
+        <a href="#auth" data-target="auth" class="active">认证</a>
+        <a href="#projects" data-target="projects">项目</a>
+        <a href="#tasks" data-target="tasks">任务</a>
+        <a href="#time" data-target="time">工时</a>
+        <a href="#reports" data-target="reports">报表</a>
+        <a href="#health" data-target="health">健康检查</a>
+      </nav>
+      <div class="footer">JWT: <code id="tokenInfo"></code></div>
+    </aside>
+    <main class="content">
+      <section id="auth" class="card">
+        <h1>认证</h1>
+        <div class="toolbar">
+          <button id="btnRefresh">刷新令牌</button>
+          <button class="secondary" id="btnLogout">退出登录</button>
+          <button class="ghost" id="btnCopyAccess">复制 Access</button>
+        </div>
+        <h2 style="margin-top:10px">注册</h2>
+        <div class="grid two">
+          <input id="tenantName" placeholder="Tenant Name" value="demo-tenant" />
+          <input id="displayName" placeholder="Display Name" value="Demo Owner" />
+          <input id="email" placeholder="Email" value="demo@tenantforge.dev" />
+          <input id="password" type="password" placeholder="Password" value="Password123!" />
+        </div>
+        <div class="row">
+          <button id="registerBtn">注册并登录</button>
+        </div>
+        <pre id="registerOut" class="note"></pre>
+        <h2>登录</h2>
+        <div class="row">
+          <button id="loginBtn">登录</button>
+        </div>
+        <pre id="loginOut" class="note"></pre>
+        <pre id="authOut" class="note"></pre>
+      </section>
 
-    <section>
-      <h2>Auth / Tokens</h2>
-      <div class="row grid">
-        <button onclick="onRefresh()">Refresh Token</button>
-        <button onclick="logout()">Logout</button>
-      </div>
-      <p class="muted">Token Info: <code id="tokenInfo"></code></p>
-      <pre id="authOut"></pre>
-    </section>
-    <section>
-      <h2>Register</h2>
-      <div class="row grid">
-        <input id="tenantName" placeholder="Tenant Name" value="demo-tenant">
-        <input id="displayName" placeholder="Display Name" value="Demo Owner">
-      </div>
-      <div class="row grid">
-        <input id="email" placeholder="Email" value="demo@tenantforge.dev">
-        <input id="password" placeholder="Password" type="password" value="Password123!">
-      </div>
-      <div class="row"><button id="registerBtn" onclick="onRegister()">Register</button></div>
-      <pre id="registerOut"></pre>
-    </section>
-    <section>
-      <h2>Login</h2>
-      <div class="row"><button id="loginBtn" onclick="onLogin()">Login</button></div>
-      <pre id="loginOut"></pre>
-    </section>
-    <section>
-      <h2>Projects</h2>
-      <div class="row grid">
-        <input id="projQ" placeholder="Filter q" />
-        <button onclick="onProjectsList()">List</button>
-      </div>
-      <div class="row grid">
-        <input id="projName" placeholder="Project name" />
-        <input id="projDesc" placeholder="Description" />
-      </div>
-      <div class="row grid">
-        <button onclick="onProjectsCreate()">Create</button>
-        <input id="projId" placeholder="Project ID for get/update/delete" />
-      </div>
-      <div class="row grid">
-        <button onclick="onProjectsGet()">Get By ID</button>
-        <button onclick="onProjectsUpdate()">Update</button>
-        <button onclick="onProjectsDelete()">Delete</button>
-      </div>
-      <pre id="projectsOut"></pre>
-    </section>
+      <section id="projects" class="card" hidden>
+        <h1>项目</h1>
+        <div class="grid three">
+          <input id="projQ" placeholder="名称包含 (q)" />
+          <button id="projList">列表</button>
+          <div></div>
+          <input id="projName" placeholder="名称" />
+          <input id="projDesc" placeholder="描述" />
+          <button id="projCreate">新建</button>
+          <input id="projId" placeholder="项目ID" />
+          <button id="projGet">查询</button>
+          <div class="row">
+            <button id="projUpdate" class="secondary">更新</button>
+            <button id="projDelete" class="secondary">删除</button>
+          </div>
+        </div>
+        <div id="projTableWrap" class="row"></div>
+        <pre id="projectsOut" class="note"></pre>
+      </section>
 
-    <section>
-      <h2>Tasks</h2>
-      <div class="row grid">
-        <input id="taskQ" placeholder="Filter q (optional)" />
-        <input id="taskProjectId" placeholder="Project ID" />
-      </div>
-      <div class="row grid">
-        <input id="taskName" placeholder="Task name" />
-        <input id="taskStatus" placeholder="Status (e.g. OPEN)" />
-      </div>
-      <div class="row grid">
-        <button onclick="onTasksList()">List</button>
-        <button onclick="onTasksCreate()">Create</button>
-        <input id="taskId" placeholder="Task ID for get/update/delete" />
-      </div>
-      <div class="row grid">
-        <button onclick="onTasksGet()">Get By ID</button>
-        <button onclick="onTasksUpdate()">Update</button>
-        <button onclick="onTasksDelete()">Delete</button>
-      </div>
-      <pre id="tasksOut"></pre>
-    </section>
+      <section id="tasks" class="card" hidden>
+        <h1>任务</h1>
+        <div class="grid three">
+          <input id="taskQ" placeholder="名称包含 (q)" />
+          <input id="taskProjectId" placeholder="项目ID (过滤/创建)" />
+          <input id="taskStatus" placeholder="状态 (OPEN/CLOSED)" />
+          <button id="taskList">列表</button>
+          <input id="taskName" placeholder="名称 (创建/更新)" />
+          <button id="taskCreate">新建</button>
+          <input id="taskId" placeholder="任务ID" />
+          <button id="taskGet">查询</button>
+          <div class="row">
+            <button id="taskUpdate" class="secondary">更新</button>
+            <button id="taskDelete" class="secondary">删除</button>
+          </div>
+        </div>
+        <div id="taskTableWrap" class="row"></div>
+        <pre id="tasksOut" class="note"></pre>
+      </section>
 
-    <section>
-      <h2>Time Entries</h2>
-      <p class="muted">默认 userId 使用令牌中的 <code id="userIdDefault"></code></p>
-      <div class="row grid">
-        <input id="teTaskId" placeholder="Task ID" />
-        <input id="teUserId" placeholder="User ID (可留空)" />
-      </div>
-      <div class="row grid">
-        <input id="teStart" placeholder="Start ISO (默认=现在-1h)" />
-        <input id="teEnd" placeholder="End ISO (默认=现在)" />
-      </div>
-      <div class="row grid">
-        <input id="teNotes" placeholder="Notes (optional)" />
-        <input id="teId" placeholder="TimeEntry ID for get/update/delete" />
-      </div>
-      <div class="row grid">
-        <button onclick="onTECreate()">Create</button>
-        <button onclick="onTEGet()">Get By ID</button>
-        <button onclick="onTEUpdate()">Update</button>
-        <button onclick="onTEDelete()">Delete</button>
-      </div>
-      <div class="row grid">
-        <input id="teFilterStart" placeholder="Filter start ISO (list)" />
-        <input id="teFilterEnd" placeholder="Filter end ISO (list)" />
-        <button onclick="onTEList()">List</button>
-      </div>
-      <pre id="teOut"></pre>
-    </section>
+      <section id="time" class="card" hidden>
+        <h1>工时</h1>
+        <p class="note muted">默认 userId 使用令牌中的 <code id="userIdDefault"></code></p>
+        <div class="grid three">
+          <input id="teTaskId" placeholder="任务ID" />
+          <input id="teUserId" placeholder="用户ID (可留空)" />
+          <input id="teNotes" placeholder="备注 (可空)" />
+          <input id="teStart" placeholder="开始ISO (默认现在-1h)" />
+          <input id="teEnd" placeholder="结束ISO (默认现在)" />
+          <button id="teCreate">新建</button>
+          <input id="teId" placeholder="工时ID" />
+          <button id="teGet">查询</button>
+          <div class="row">
+            <button id="teUpdate" class="secondary">更新</button>
+            <button id="teDelete" class="secondary">删除</button>
+          </div>
+          <input id="teFilterStart" placeholder="过滤：开始ISO" />
+          <input id="teFilterEnd" placeholder="过滤：结束ISO" />
+          <button id="teList">列表</button>
+        </div>
+        <div id="teTableWrap" class="row"></div>
+        <pre id="teOut" class="note"></pre>
+      </section>
 
-    <section>
-      <h2>Reports</h2>
-      <div class="row grid">
-        <input id="rProjectId" placeholder="Project ID (optional)" />
-        <input id="rUserId" placeholder="User ID (optional)" />
-      </div>
-      <div class="row grid">
-        <input id="rPeriod" placeholder="week|month (default week)" />
-        <button onclick="onReportJson()">Get JSON</button>
-        <button onclick="onReportCsv()">Get CSV</button>
-      </div>
-      <pre id="reportOut"></pre>
-    </section>
-  </main>
+      <section id="reports" class="card" hidden>
+        <h1>报表</h1>
+        <div class="grid three">
+          <input id="rPeriod" placeholder="week|month (默认 week)" />
+          <input id="rProjectId" placeholder="项目ID (可选)" />
+          <input id="rUserId" placeholder="用户ID (可选)" />
+          <button id="rJson">JSON</button>
+          <button id="rCsv" class="secondary">CSV</button>
+        </div>
+        <pre id="reportOut" class="note"></pre>
+      </section>
+
+      <section id="health" class="card" hidden>
+        <h1>健康检查</h1>
+        <div class="toolbar">
+          <button id="btnHealth">检查 /api/health</button>
+          <a class="secondary" id="linkOpenApi" target="_blank" rel="noreferrer">打开 OpenAPI JSON</a>
+        </div>
+        <pre id="healthOut" class="note"></pre>
+      </section>
+
+      <div id="toast" class="toast"></div>
+    </main>
+  </div>
+  <script src="app.js"></script>
 </body>
 </html>

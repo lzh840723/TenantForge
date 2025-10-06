@@ -57,6 +57,15 @@
     return {ok: resp.ok, status: resp.status, data};
   }
 
+  function requireAuth(){
+    if(!state.access){ toast('请先在“认证”页登录/注册获取令牌','err'); return false; }
+    return true;
+  }
+  function requireUuid(id){
+    if(!isUuid(id||'')){ toast('请先选择表格中的一行，或输入有效的 UUID','err'); return false; }
+    return true;
+  }
+
   async function doRefresh(){
     if(!state.refresh){ toast('无刷新令牌','warn'); return false; }
     const r = await api('/api/auth/refresh', {method:'POST', body:{refreshToken: state.refresh}, noAuth:true});
@@ -132,7 +141,7 @@
 
     // projects
     $('#projList').addEventListener('click', async ()=>{ const q = new URLSearchParams({ q: $('#projQ').value, page:'0', size:'20', sort:'createdAt', order:'desc' }); const r = await api('/api/projects?'+q.toString()); renderList(r, '#projTableWrap', ['id','name','description','createdAt'], (row)=>{ $('#projId').value=row.id; $('#projName').value=row.name; $('#projDesc').value=row.description||''; }); });
-    $('#projCreate').addEventListener('click', async ()=>{ const r = await api('/api/projects',{method:'POST', body:{ name: $('#projName').value, description: $('#projDesc').value }}); renderOut(r,'#projectsOut'); if(r.ok) toast('项目已创建'); });
+    $('#projCreate').addEventListener('click', async ()=>{ if(!requireAuth()) return; const r = await api('/api/projects',{method:'POST', body:{ name: $('#projName').value, description: $('#projDesc').value }}); renderOut(r,'#projectsOut'); if(r.ok) toast('项目已创建'); });
     $('#projGet').addEventListener('click', async ()=>{
       const raw=$('#projId').value.trim();
       if(isUuid(raw)){
@@ -144,21 +153,21 @@
       if(r.ok){ renderList(r,'#projTableWrap',['id','name','description','createdAt'], (row)=>{ $('#projId').value=row.id; $('#projName').value=row.name; $('#projDesc').value=row.description||''; }); toast('已按名称查询，点击行可回填ID'); }
       else { renderOut(r,'#projectsOut'); }
     });
-    $('#projUpdate').addEventListener('click', async ()=>{ const id=$('#projId').value.trim(); const r=await api('/api/projects/'+id,{method:'PUT', body:{name:$('#projName').value, description:$('#projDesc').value}}); renderOut(r,'#projectsOut'); if(r.ok) toast('项目已更新'); });
-    $('#projDelete').addEventListener('click', async ()=>{ const id=$('#projId').value.trim(); const r=await api('/api/projects/'+id,{method:'DELETE'}); renderOut(r,'#projectsOut'); if(r.ok) toast('项目已删除'); });
+    $('#projUpdate').addEventListener('click', async ()=>{ if(!requireAuth()) return; const id=$('#projId').value.trim(); if(!requireUuid(id)) return; const r=await api('/api/projects/'+id,{method:'PUT', body:{name:$('#projName').value, description:$('#projDesc').value}}); renderOut(r,'#projectsOut'); if(r.ok) toast('项目已更新'); });
+    $('#projDelete').addEventListener('click', async ()=>{ if(!requireAuth()) return; const id=$('#projId').value.trim(); if(!requireUuid(id)) return; const r=await api('/api/projects/'+id,{method:'DELETE'}); renderOut(r,'#projectsOut'); if(r.ok) toast('项目已删除'); });
 
     // tasks
     $('#taskList').addEventListener('click', async ()=>{ const p=new URLSearchParams({ q:$('#taskQ').value, projectId:$('#taskProjectId').value.trim(), status:$('#taskStatus').value, page:'0', size:'20', sort:'createdAt', order:'desc' }); const r=await api('/api/tasks?'+p.toString()); renderList(r,'#taskTableWrap',['id','projectId','name','status','createdAt'], (row)=>{ $('#taskId').value=row.id; $('#taskName').value=row.name; $('#taskStatus').value=row.status||''; $('#taskProjectId').value=row.projectId||''; }); });
-    $('#taskCreate').addEventListener('click', async ()=>{ const r=await api('/api/tasks',{method:'POST', body:{ projectId:$('#taskProjectId').value.trim(), name:$('#taskName').value }}); renderOut(r,'#tasksOut'); if(r.ok) toast('任务已创建'); });
+    $('#taskCreate').addEventListener('click', async ()=>{ if(!requireAuth()) return; const r=await api('/api/tasks',{method:'POST', body:{ projectId:$('#taskProjectId').value.trim(), name:$('#taskName').value }}); renderOut(r,'#tasksOut'); if(r.ok) toast('任务已创建'); });
     $('#taskGet').addEventListener('click', async ()=>{ const id=$('#taskId').value.trim(); const r=await api('/api/tasks/'+id); renderOut(r,'#tasksOut'); });
-    $('#taskUpdate').addEventListener('click', async ()=>{ const id=$('#taskId').value.trim(); const r=await api('/api/tasks/'+id,{method:'PUT', body:{ name:$('#taskName').value, status:$('#taskStatus').value||'OPEN'}}); renderOut(r,'#tasksOut'); if(r.ok) toast('任务已更新'); });
-    $('#taskDelete').addEventListener('click', async ()=>{ const id=$('#taskId').value.trim(); const r=await api('/api/tasks/'+id,{method:'DELETE'}); renderOut(r,'#tasksOut'); if(r.ok) toast('任务已删除'); });
+    $('#taskUpdate').addEventListener('click', async ()=>{ if(!requireAuth()) return; const id=$('#taskId').value.trim(); if(!requireUuid(id)) return; const r=await api('/api/tasks/'+id,{method:'PUT', body:{ name:$('#taskName').value, status:$('#taskStatus').value||'OPEN'}}); renderOut(r,'#tasksOut'); if(r.ok) toast('任务已更新'); });
+    $('#taskDelete').addEventListener('click', async ()=>{ if(!requireAuth()) return; const id=$('#taskId').value.trim(); if(!requireUuid(id)) return; const r=await api('/api/tasks/'+id,{method:'DELETE'}); renderOut(r,'#tasksOut'); if(r.ok) toast('任务已删除'); });
 
     // time entries
-    $('#teCreate').addEventListener('click', async ()=>{ const body={ taskId:$('#teTaskId').value.trim(), userId:($('#teUserId').value.trim()||userIdFromAccess()), startedAt:($('#teStart').value||isoMinusHours(1)), endedAt:($('#teEnd').value||isoNow()), notes:$('#teNotes').value }; const r=await api('/api/time-entries',{method:'POST', body}); renderOut(r,'#teOut'); if(r.ok) toast('工时已创建'); });
+    $('#teCreate').addEventListener('click', async ()=>{ if(!requireAuth()) return; const body={ taskId:$('#teTaskId').value.trim(), userId:($('#teUserId').value.trim()||userIdFromAccess()), startedAt:($('#teStart').value||isoMinusHours(1)), endedAt:($('#teEnd').value||isoNow()), notes:$('#teNotes').value }; const r=await api('/api/time-entries',{method:'POST', body}); renderOut(r,'#teOut'); if(r.ok) toast('工时已创建'); });
     $('#teGet').addEventListener('click', async ()=>{ const id=$('#teId').value.trim(); const r=await api('/api/time-entries/'+id); renderOut(r,'#teOut'); });
-    $('#teUpdate').addEventListener('click', async ()=>{ const id=$('#teId').value.trim(); const body={ startedAt:($('#teStart').value||isoMinusHours(1)), endedAt:($('#teEnd').value||isoNow()), notes:$('#teNotes').value }; const r=await api('/api/time-entries/'+id,{method:'PUT', body}); renderOut(r,'#teOut'); if(r.ok) toast('工时已更新'); });
-    $('#teDelete').addEventListener('click', async ()=>{ const id=$('#teId').value.trim(); const r=await api('/api/time-entries/'+id,{method:'DELETE'}); renderOut(r,'#teOut'); if(r.ok) toast('工时已删除'); });
+    $('#teUpdate').addEventListener('click', async ()=>{ if(!requireAuth()) return; const id=$('#teId').value.trim(); if(!requireUuid(id)) return; const body={ startedAt:($('#teStart').value||isoMinusHours(1)), endedAt:($('#teEnd').value||isoNow()), notes:$('#teNotes').value }; const r=await api('/api/time-entries/'+id,{method:'PUT', body}); renderOut(r,'#teOut'); if(r.ok) toast('工时已更新'); });
+    $('#teDelete').addEventListener('click', async ()=>{ if(!requireAuth()) return; const id=$('#teId').value.trim(); if(!requireUuid(id)) return; const r=await api('/api/time-entries/'+id,{method:'DELETE'}); renderOut(r,'#teOut'); if(r.ok) toast('工时已删除'); });
     $('#teList').addEventListener('click', async ()=>{ const p=new URLSearchParams({ start:$('#teFilterStart').value, end:$('#teFilterEnd').value, taskId:$('#teTaskId').value.trim(), userId:$('#teUserId').value.trim(), page:'0', size:'20', sort:'startedAt', order:'desc' }); const r=await api('/api/time-entries?'+p.toString()); renderList(r,'#teTableWrap',['id','taskId','userId','startedAt','endedAt','notes'], (row)=>{ $('#teId').value=row.id; $('#teTaskId').value=row.taskId||''; $('#teUserId').value=row.userId||''; $('#teStart').value=row.startedAt||''; $('#teEnd').value=row.endedAt||''; $('#teNotes').value=row.notes||''; }); });
 
     // reports

@@ -61,7 +61,7 @@
     if(!state.access){
       toast('请先登录后再执行该操作','err');
       const ao = document.querySelector('#authOut');
-      if(ao){ ao.className='err note'; ao.textContent='请先登录（在左侧“认证”页注册或登录）'; }
+      if(ao){ ao.className='err note'; ao.textContent='请先登录（在左侧“认证”页注册或登录）'; ao.style.display=''; }
       try{ setActive('auth'); }catch(e){}
       const email = document.querySelector('#email'); if(email) email.focus();
       return false;
@@ -96,7 +96,7 @@
 
   function clearLoginNotice(){
     const ao = document.querySelector('#authOut');
-    if(ao){ ao.textContent=''; ao.className='note'; }
+    if(ao){ ao.textContent=''; ao.className='note'; ao.style.display='none'; }
   }
 
   function tableFrom(items, columns){

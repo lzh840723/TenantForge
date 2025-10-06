@@ -28,10 +28,14 @@
     set refresh(v){ v? localStorage.setItem('refreshToken', v) : localStorage.removeItem('refreshToken'); renderTokenInfo(); },
   };
 
-  function normalizeBase(v){
-    if(!v) return v; let s = v.trim();
-    if(!/^https?:\/\//i.test(s)) s = 'https://'+s;
-    return s.replace(/\/$/, '');
+  function normalizeBaseStrict(v){
+    if(!v) return '';
+    let s = String(v).trim();
+    // Replace common unicode dashes with ASCII hyphen and strip spaces
+    s = s.replace(/[\u2012\u2013\u2014\u2212]/g, '-').replace(/\s+/g,'');
+    if(!/^https?:\/\//i.test(s)) s = 'https://' + s;
+    s = s.replace(/\/+$/,'');
+    return s;
   }
 
   function toast(msg, kind='info'){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 2200); }
@@ -43,7 +47,8 @@
   async function api(path, {method='GET', body=null, headers={}, retry=true, noAuth=false}={}){
     const h = {'Content-Type':'application/json', ...headers};
     if(!noAuth && state.access) h['Authorization'] = 'Bearer '+state.access;
-    const resp = await fetch(state.base+path, {method, headers:h, body: body?JSON.stringify(body):null});
+    const base = normalizeBaseStrict(state.base);
+    const resp = await fetch(base+path, {method, headers:h, body: body?JSON.stringify(body):null});
     const text = await resp.text(); let data; try{ data = JSON.parse(text);}catch(e){ data = text; }
     if(resp.status===401 && retry && state.refresh && !path.startsWith('/api/auth/refresh')){
       const ok = await doRefresh();
@@ -101,7 +106,7 @@
     // nav
     $$('#nav a').forEach(a=> a.addEventListener('click', (e)=>{ e.preventDefault(); setActive(a.dataset.target); history.replaceState(null,'','#'+a.dataset.target); }));
     // base
-    $('#btnSaveBase').addEventListener('click', ()=>{ const v=normalizeBase($('#base').value); state.base=v; toast('已保存后端地址'); $('#linkOpenApi').href=state.base+'/v3/api-docs'; });
+    $('#btnSaveBase').addEventListener('click', ()=>{ const v=normalizeBaseStrict($('#base').value); state.base=v; toast('已保存后端地址'); $('#linkOpenApi').href=state.base+'/v3/api-docs'; });
 
     // auth
     $('#registerBtn').addEventListener('click', async ()=>{
@@ -147,7 +152,7 @@
 
     // reports
     $('#rJson').addEventListener('click', async ()=>{ const p=getReportParams(); const r=await api('/api/reports/time?'+p.toString()); renderOut(r,'#reportOut'); });
-    $('#rCsv').addEventListener('click', async ()=>{ const p=getReportParams(); p.set('format','csv'); const u=state.base+'/api/reports/time?'+p.toString(); window.open(u,'_blank'); });
+    $('#rCsv').addEventListener('click', async ()=>{ const p=getReportParams(); p.set('format','csv'); const u=normalizeBaseStrict(state.base)+'/api/reports/time?'+p.toString(); window.open(u,'_blank'); });
 
     // health
     $('#btnHealth').addEventListener('click', async ()=>{ const r=await api('/api/health'); renderOut(r,'#healthOut'); if(r.ok) toast('健康：OK'); });
@@ -177,6 +182,9 @@
     if(!localStorage.getItem('backendBaseUrl') && defaultBase && defaultBase!=='http://localhost:8080'){
       localStorage.setItem('backendBaseUrl', defaultBase);
     }
+    // Normalize any previously saved invalid base (missing scheme, unicode dash, etc.)
+    const normalized = normalizeBaseStrict(state.base);
+    if(normalized !== state.base){ state.base = normalized; }
     $('#base').value = state.base;
     renderBase(); renderTokenInfo(); bind();
     $('#linkOpenApi').href = state.base + '/v3/api-docs';
@@ -186,4 +194,3 @@
 
   document.addEventListener('DOMContentLoaded', init);
 })();
-

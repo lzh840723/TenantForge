@@ -47,23 +47,59 @@
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
       const displayName = document.getElementById('displayName').value;
-      const r = await req('/api/auth/register','POST',{tenantName,email,password,displayName});
-      show('registerOut', r);
-      if(r.ok){ localStorage.setItem('accessToken', r.data.accessToken); }
+      const btn = document.getElementById('registerBtn') || {disabled:false,textContent:''};
+      btn.disabled = true; btn.textContent = 'Registering...';
+      try {
+        const r = await req('/api/auth/register','POST',{tenantName,email,password,displayName});
+        if(r.ok){
+          localStorage.setItem('accessToken', r.data.accessToken);
+          const el = document.getElementById('registerOut');
+          el.className = 'ok';
+          el.textContent = '✅ Registered successfully. Access token stored. You can proceed to protected APIs.';
+        } else {
+          show('registerOut', r);
+        }
+      } finally {
+        btn.disabled = false; btn.textContent = 'Register';
+      }
     }
     async function onLogin(){
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
-      const r = await req('/api/auth/login','POST',{email,password});
-      show('loginOut', r);
-      if(r.ok){ localStorage.setItem('accessToken', r.data.accessToken); }
+      const btn = document.getElementById('loginBtn') || {disabled:false,textContent:''};
+      btn.disabled = true; btn.textContent = 'Logging in...';
+      try {
+        const r = await req('/api/auth/login','POST',{email,password});
+        if(r.ok){
+          localStorage.setItem('accessToken', r.data.accessToken);
+          const el = document.getElementById('loginOut');
+          el.className = 'ok';
+          el.textContent = '✅ Logged in successfully. Token stored.';
+        } else {
+          show('loginOut', r);
+        }
+      } finally {
+        btn.disabled = false; btn.textContent = 'Login';
+      }
     }
     async function onProjects(){
       const token = localStorage.getItem('accessToken');
       const r = await req('/api/projects','GET',null, token);
       show('projectsOut', r);
     }
-    function onBase(){ const v = document.getElementById('base').value; setBase(v); document.getElementById('baseNow').textContent=getBase(); }
+    function normalizeBase(v){
+      if(!v) return v;
+      let s = v.trim();
+      if(!/^https?:\/\//i.test(s)) s = 'https://' + s; // auto-prepend scheme
+      s = s.replace(/\/$/, '');
+      return s;
+    }
+    function onBase(){
+      const raw = document.getElementById('base').value;
+      const v = normalizeBase(raw);
+      setBase(v);
+      document.getElementById('baseNow').textContent=getBase();
+    }
     function show(id, r){
       const el = document.getElementById(id);
       el.className = r.ok? 'ok' : 'err';
@@ -97,12 +133,12 @@
         <input id="email" placeholder="Email" value="demo@tenantforge.dev">
         <input id="password" placeholder="Password" type="password" value="Password123!">
       </div>
-      <div class="row"><button onclick="onRegister()">Register</button></div>
+      <div class="row"><button id="registerBtn" onclick="onRegister()">Register</button></div>
       <pre id="registerOut"></pre>
     </section>
     <section>
       <h2>Login</h2>
-      <div class="row"><button onclick="onLogin()">Login</button></div>
+      <div class="row"><button id="loginBtn" onclick="onLogin()">Login</button></div>
       <pre id="loginOut"></pre>
     </section>
     <section>

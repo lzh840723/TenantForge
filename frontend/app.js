@@ -59,7 +59,9 @@
     return {ok: resp.ok, status: resp.status, data};
   }
 
-  function requireAuth(){
+  function accessExp(){ const c=decodeJwt(state.access)||{}; return c.exp? new Date(c.exp*1000).getTime():0; }
+  function isAccessValid(){ const exp=accessExp(); return !!state.access && (!exp || Date.now()<exp-5000); }
+  async function requireAuth(){
     if(!state.access){
       toast('请先登录后再执行该操作','err');
       const ao = document.querySelector('#authOut');
@@ -67,6 +69,10 @@
       try{ setActive('auth'); }catch(e){}
       const email = document.querySelector('#email'); if(email) email.focus();
       return false;
+    }
+    if(!isAccessValid()){
+      const ok = await doRefresh();
+      if(!ok){ toast('登录状态已过期，请重新登录','err'); try{ setActive('auth'); }catch(e){}; return false; }
     }
     return true;
   }

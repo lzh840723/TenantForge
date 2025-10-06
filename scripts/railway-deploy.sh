@@ -45,6 +45,7 @@ update_vars() {
     --set "SPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME}" \
     --set "SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD}" \
     --set "JWT_SECRET=${JWT_SECRET}" \
+    --set "CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-*}" \
     --skip-deploys >/dev/null
 }
 

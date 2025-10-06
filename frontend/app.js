@@ -77,7 +77,7 @@
     if(!state.refresh){ toast('无刷新令牌','warn'); return false; }
     const r = await api('/api/auth/refresh', {method:'POST', body:{refreshToken: state.refresh}, noAuth:true});
     if(r.ok){
-      state.access = r.data.accessToken; state.refresh = r.data.refreshToken; toast('已刷新令牌','ok'); return true;
+      state.access = r.data.accessToken; state.refresh = r.data.refreshToken; clearLoginNotice(); toast('已刷新令牌','ok'); return true;
     }
     toast('刷新失败：'+(r.status||'') ,'err'); return false;
   }
@@ -92,6 +92,11 @@
     if(state.refresh && rc.exp) parts.push('rExp='+new Date(rc.exp*1000).toISOString());
     $('#tokenInfo').textContent = parts.join(' | ');
     $('#userIdDefault').textContent = userIdFromAccess()||'-';
+  }
+
+  function clearLoginNotice(){
+    const ao = document.querySelector('#authOut');
+    if(ao){ ao.textContent=''; ao.className='note'; }
   }
 
   function tableFrom(items, columns){
@@ -131,14 +136,14 @@
         tenantName: $('#tenantName').value, email: $('#email').value, password: $('#password').value, displayName: $('#displayName').value
       };
       const r = await api('/api/auth/register',{method:'POST', body});
-      if(r.ok){ state.access=r.data.accessToken; state.refresh=r.data.refreshToken; $('#registerOut').className='ok'; $('#registerOut').textContent='✅ 注册成功'; toast('注册成功'); }
+      if(r.ok){ state.access=r.data.accessToken; state.refresh=r.data.refreshToken; clearLoginNotice(); $('#registerOut').className='ok'; $('#registerOut').textContent='✅ 注册成功'; toast('注册成功'); }
       else { $('#registerOut').className='err'; $('#registerOut').textContent=fmt(r); }
       btn.disabled=false;
     });
     $('#loginBtn').addEventListener('click', async ()=>{
       const btn=$('#loginBtn'); btn.disabled=true; const body={ email: $('#email').value, password: $('#password').value };
       const r = await api('/api/auth/login',{method:'POST', body});
-      if(r.ok){ state.access=r.data.accessToken; state.refresh=r.data.refreshToken; $('#loginOut').className='ok'; $('#loginOut').textContent='✅ 登录成功'; toast('登录成功'); }
+      if(r.ok){ state.access=r.data.accessToken; state.refresh=r.data.refreshToken; clearLoginNotice(); $('#loginOut').className='ok'; $('#loginOut').textContent='✅ 登录成功'; toast('登录成功'); }
       else { $('#loginOut').className='err'; $('#loginOut').textContent=fmt(r); }
       btn.disabled=false;
     });

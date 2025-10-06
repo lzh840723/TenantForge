@@ -171,7 +171,19 @@
         const btn = $('#projList'); if(btn) btn.click();
       }
     });
-    $('#projDelete').addEventListener('click', async ()=>{ if(!requireAuth()) return; const id=$('#projId').value.trim(); if(!requireUuid(id)) return; const r=await api('/api/projects/'+id,{method:'DELETE'}); renderOut(r,'#projectsOut'); if(r.ok) toast('项目已删除'); });
+    $('#projDelete').addEventListener('click', async ()=>{
+      if(!requireAuth()) return;
+      const id=$('#projId').value.trim();
+      if(!requireUuid(id)) return;
+      const r=await api('/api/projects/'+id,{method:'DELETE'});
+      renderOut(r,'#projectsOut');
+      if(r.ok){
+        toast('项目已删除');
+        // 清空已删除的ID并刷新列表（保留当前筛选条件）
+        $('#projId').value='';
+        const btn=$('#projList'); if(btn) btn.click();
+      }
+    });
     $('#projCopyId').addEventListener('click', async ()=>{ const id=$('#projId').value.trim(); if(!isUuid(id)){ toast('尚未选择项目','err'); return; } await navigator.clipboard.writeText(id); toast('已复制项目ID'); });
 
     // tasks
@@ -204,7 +216,18 @@
         const btn = $('#taskList'); if(btn) btn.click();
       }
     });
-    $('#taskDelete').addEventListener('click', async ()=>{ if(!requireAuth()) return; const id=$('#taskId').value.trim(); if(!requireUuid(id)) return; const r=await api('/api/tasks/'+id,{method:'DELETE'}); renderOut(r,'#tasksOut'); if(r.ok) toast('任务已删除'); });
+    $('#taskDelete').addEventListener('click', async ()=>{
+      if(!requireAuth()) return;
+      const id=$('#taskId').value.trim();
+      if(!requireUuid(id)) return;
+      const r=await api('/api/tasks/'+id,{method:'DELETE'});
+      renderOut(r,'#tasksOut');
+      if(r.ok){
+        toast('任务已删除');
+        $('#taskId').value='';
+        const btn=$('#taskList'); if(btn) btn.click();
+      }
+    });
 
     // time entries
     $('#teCreate').addEventListener('click', async ()=>{ if(!requireAuth()) return; const body={ taskId:$('#teTaskId').value.trim(), userId:($('#teUserId').value.trim()||userIdFromAccess()), startedAt:($('#teStart').value||isoMinusHours(1)), endedAt:($('#teEnd').value||isoNow()), notes:$('#teNotes').value }; const r=await api('/api/time-entries',{method:'POST', body}); renderOut(r,'#teOut'); if(r.ok) toast('工时已创建'); });
@@ -237,7 +260,18 @@
         const btn = $('#teList'); if(btn) btn.click();
       }
     });
-    $('#teDelete').addEventListener('click', async ()=>{ if(!requireAuth()) return; const id=$('#teId').value.trim(); if(!requireUuid(id)) return; const r=await api('/api/time-entries/'+id,{method:'DELETE'}); renderOut(r,'#teOut'); if(r.ok) toast('工时已删除'); });
+    $('#teDelete').addEventListener('click', async ()=>{
+      if(!requireAuth()) return;
+      const id=$('#teId').value.trim();
+      if(!requireUuid(id)) return;
+      const r=await api('/api/time-entries/'+id,{method:'DELETE'});
+      renderOut(r,'#teOut');
+      if(r.ok){
+        toast('工时已删除');
+        $('#teId').value='';
+        const btn=$('#teList'); if(btn) btn.click();
+      }
+    });
     $('#teList').addEventListener('click', async ()=>{ const p=new URLSearchParams({ start:$('#teFilterStart').value, end:$('#teFilterEnd').value, taskId:$('#teTaskId').value.trim(), userId:$('#teUserId').value.trim(), page:'0', size:'20', sort:'startedAt', order:'desc' }); const r=await api('/api/time-entries?'+p.toString()); renderList(r,'#teTableWrap',['id','taskId','userId','startedAt','endedAt','notes'], (row)=>{ $('#teId').value=row.id; $('#teTaskId').value=row.taskId||''; $('#teUserId').value=row.userId||''; $('#teStart').value=row.startedAt||''; $('#teEnd').value=row.endedAt||''; $('#teNotes').value=row.notes||''; }); });
 
     // reports
@@ -252,7 +286,9 @@
     const wrap = typeof wrapSel==='string' ? document.querySelector(wrapSel) : wrapSel;
     wrap.innerHTML='';
     if(!result.ok){ wrap.innerHTML = '<span class="err">'+fmt(result)+'</span>'; return; }
-    const data = Array.isArray(result.data?.content) ? result.data.content : (Array.isArray(result.data) ? result.data : [result.data]);
+    const dataRaw = Array.isArray(result.data?.content) ? result.data.content : (Array.isArray(result.data) ? result.data : [result.data]);
+    const data = dataRaw.filter(Boolean);
+    if(data.length===0){ wrap.innerHTML = '<div class="muted">未找到匹配记录</div>'; return; }
     const cols = columns.map(k=>({key:k,label:k}));
     const tbl = tableFrom(data, cols);
     tbl.querySelectorAll('tbody tr').forEach((tr,idx)=>{

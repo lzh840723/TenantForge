@@ -55,19 +55,19 @@ public class TaskController {
 
     @GetMapping("/{id}")
     @Operation(summary = "Get task by id")
-    public ResponseEntity<Task> get(@PathVariable UUID id){
+    public ResponseEntity<Task> get(@PathVariable("id") UUID id){
         return service.find(id).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
     }
 
     @PutMapping("/{id}")
     @Operation(summary = "Update task")
-    public ResponseEntity<Task> update(@PathVariable UUID id, @RequestBody @Valid UpdateRequest req){
+    public ResponseEntity<Task> update(@PathVariable("id") UUID id, @RequestBody @Valid UpdateRequest req){
         return service.update(id, req.name, req.status).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Soft delete task")
-    public ResponseEntity<Void> delete(@PathVariable UUID id){
+    public ResponseEntity<Void> delete(@PathVariable("id") UUID id){
         return service.softDelete(id) ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
     }
 

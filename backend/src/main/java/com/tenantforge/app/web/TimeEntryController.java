@@ -66,13 +66,13 @@ public class TimeEntryController {
 
     @GetMapping("/{id}")
     @Operation(summary = "Get time entry by id")
-    public ResponseEntity<TimeEntry> get(@PathVariable UUID id) {
+    public ResponseEntity<TimeEntry> get(@PathVariable("id") UUID id) {
         return service.find(id).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
     }
 
     @PutMapping("/{id}")
     @Operation(summary = "Update time entry")
-    public ResponseEntity<TimeEntry> update(@PathVariable UUID id, @RequestBody @Valid UpdateRequest req) {
+    public ResponseEntity<TimeEntry> update(@PathVariable("id") UUID id, @RequestBody @Valid UpdateRequest req) {
         return service
                 .update(id, req.startedAt, req.endedAt, req.notes)
                 .map(ResponseEntity::ok)
@@ -81,7 +81,7 @@ public class TimeEntryController {
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Soft delete time entry")
-    public ResponseEntity<Void> delete(@PathVariable UUID id) {
+    public ResponseEntity<Void> delete(@PathVariable("id") UUID id) {
         return service.softDelete(id) ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
     }
 

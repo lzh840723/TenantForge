@@ -50,20 +50,20 @@ public class ProjectController {
 
     @GetMapping("/{id}")
     @Operation(summary = "Get project by id")
-    public ResponseEntity<Project> get(@PathVariable UUID id){
+    public ResponseEntity<Project> get(@PathVariable("id") UUID id){
         return service.find(id).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
     }
 
     @PutMapping("/{id}")
     @Operation(summary = "Update project")
-    public ResponseEntity<Project> update(@PathVariable UUID id, @RequestBody @Valid UpdateRequest req){
+    public ResponseEntity<Project> update(@PathVariable("id") UUID id, @RequestBody @Valid UpdateRequest req){
         return service.update(id, req.name, req.description)
                 .map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Soft delete project")
-    public ResponseEntity<Void> delete(@PathVariable UUID id){
+    public ResponseEntity<Void> delete(@PathVariable("id") UUID id){
         return service.softDelete(id) ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
     }
 

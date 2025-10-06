@@ -152,3 +152,5 @@ local_notes/             Internal playbooks (.env stored here)
 - Typecheck: `make typecheck`
 - Test (unit only): `make test`
 - Integration tests (requires Docker): `make test-integration`
+
+<!-- trigger: 2025-10-06T04:04:57Z -->

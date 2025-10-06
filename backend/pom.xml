@@ -132,6 +132,8 @@
                 <version>3.13.0</version>
                 <configuration>
                     <release>${maven.compiler.release}</release>
+                    <!-- Ensure method parameter names are retained for Spring MVC (@PathVariable without explicit name). -->
+                    <parameters>true</parameters>
                 </configuration>
             </plugin>
             <plugin>

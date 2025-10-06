@@ -329,8 +329,15 @@
 
     // time entries
     $('#teCreate').addEventListener('click', async ()=>{
-      if(!requireAuth()) return;
-      const body={ taskId:$('#teTaskId').value.trim(), userId:($('#teUserId').value.trim()||userIdFromAccess()), startedAt:($('#teStart').value||isoMinusHours(1)), endedAt:($('#teEnd').value||isoNow()), notes:$('#teNotes').value };
+      if(!await requireAuth()) return;
+      let taskId = $('#teTaskId').value.trim();
+      if(!isUuid(taskId)){ toast('请先选择有效的任务ID（到“任务”页点表格一行）','err'); return; }
+      let userIdIn = $('#teUserId').value.trim();
+      let userId = isUuid(userIdIn) ? userIdIn : userIdFromAccess();
+      if(!isUuid(userId)){ toast('无法确定用户ID，请先登录','err'); return; }
+      const started = $('#teStart').value && !isNaN(Date.parse($('#teStart').value)) ? $('#teStart').value : isoMinusHours(1);
+      const ended   = $('#teEnd').value && !isNaN(Date.parse($('#teEnd').value))   ? $('#teEnd').value   : isoNow();
+      const body={ taskId, userId, startedAt: started, endedAt: ended, notes:$('#teNotes').value };
       const r=await api('/api/time-entries',{method:'POST', body});
       renderOut(r,'#teOut');
       if(r.ok){

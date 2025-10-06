@@ -29,113 +29,124 @@
     <main class="content">
       <section id="auth" class="card">
         <h1>认证</h1>
-        <div class="toolbar">
+        <div class="zone actions">
+          <button id="registerBtn">注册并登录</button>
+          <button id="loginBtn" class="secondary">登录</button>
           <button id="btnRefresh">刷新令牌</button>
           <button class="secondary" id="btnLogout">退出登录</button>
           <button class="ghost" id="btnCopyAccess">复制 Access</button>
         </div>
-        <h2 style="margin-top:10px">注册</h2>
-        <div class="grid two">
-          <input id="tenantName" placeholder="Tenant Name" value="demo-tenant" />
-          <input id="displayName" placeholder="Display Name" value="Demo Owner" />
-          <input id="email" placeholder="Email" value="demo@tenantforge.dev" />
-          <input id="password" type="password" placeholder="Password" value="Password123!" />
+        <div class="zone inputs grid two">
+          <div class="field"><label>Tenant Name</label><input id="tenantName" value="demo-tenant" placeholder="demo-tenant" /></div>
+          <div class="field"><label>Display Name</label><input id="displayName" value="Demo Owner" placeholder="Demo Owner" /></div>
+          <div class="field"><label>Email</label><input id="email" value="demo@tenantforge.dev" placeholder="email@example.com" /></div>
+          <div class="field"><label>Password</label><input id="password" type="password" value="Password123!" placeholder="Password" /></div>
         </div>
-        <div class="row">
-          <button id="registerBtn">注册并登录</button>
+        <div class="zone results">
+          <pre id="registerOut" class="note"></pre>
+          <pre id="loginOut" class="note"></pre>
+          <pre id="authOut" class="note"></pre>
         </div>
-        <pre id="registerOut" class="note"></pre>
-        <h2>登录</h2>
-        <div class="row">
-          <button id="loginBtn">登录</button>
-        </div>
-        <pre id="loginOut" class="note"></pre>
-        <pre id="authOut" class="note"></pre>
       </section>
 
       <section id="projects" class="card" hidden>
         <h1>项目</h1>
-        <div class="grid three">
-          <input id="projQ" placeholder="名称包含 (q)" />
+        <div class="zone actions">
           <button id="projList">列表</button>
-          <div></div>
-          <input id="projName" placeholder="名称" />
-          <input id="projDesc" placeholder="描述" />
+          <button id="projGet" class="secondary">查询</button>
           <button id="projCreate">新建</button>
-          <input id="projId" placeholder="项目ID或名称关键词" />
-          <button id="projGet">查询</button>
-          <div class="row">
-            <button id="projUpdate" class="secondary">更新</button>
-            <button id="projDelete" class="secondary">删除</button>
-          </div>
+          <button id="projUpdate" class="secondary">更新</button>
+          <button id="projDelete" class="secondary">删除</button>
         </div>
-        <div id="projTableWrap" class="row"></div>
-        <pre id="projectsOut" class="note"></pre>
+        <div class="zone inputs grid three">
+          <div class="field"><label>名称包含 (q)</label><input id="projQ" placeholder="例如 demo" /></div>
+          <div class="field"><label>项目ID或名称关键词</label><input id="projId" placeholder="UUID 或 关键字" /></div>
+          <div></div>
+          <div class="field"><label>名称</label><input id="projName" placeholder="名称" /></div>
+          <div class="field"><label>描述</label><input id="projDesc" placeholder="描述" /></div>
+        </div>
+        <div class="zone results">
+          <div id="projTableWrap" class="row"></div>
+          <pre id="projectsOut" class="note"></pre>
+        </div>
       </section>
 
       <section id="tasks" class="card" hidden>
         <h1>任务</h1>
-        <div class="grid three">
-          <input id="taskQ" placeholder="名称包含 (q)" />
-          <input id="taskProjectId" placeholder="项目ID (过滤/创建)" />
-          <input id="taskStatus" placeholder="状态 (OPEN/CLOSED)" />
+        <div class="zone actions">
           <button id="taskList">列表</button>
-          <input id="taskName" placeholder="名称 (创建/更新)" />
+          <button id="taskGet" class="secondary">查询</button>
           <button id="taskCreate">新建</button>
-          <input id="taskId" placeholder="任务ID" />
-          <button id="taskGet">查询</button>
-          <div class="row">
-            <button id="taskUpdate" class="secondary">更新</button>
-            <button id="taskDelete" class="secondary">删除</button>
-          </div>
+          <button id="taskUpdate" class="secondary">更新</button>
+          <button id="taskDelete" class="secondary">删除</button>
         </div>
-        <div id="taskTableWrap" class="row"></div>
-        <pre id="tasksOut" class="note"></pre>
+        <div class="zone inputs grid three">
+          <div class="field"><label>名称包含 (q)</label><input id="taskQ" placeholder="例如 demo" /></div>
+          <div class="field"><label>项目ID</label><input id="taskProjectId" placeholder="过滤/创建" /></div>
+          <div class="field"><label>状态</label><input id="taskStatus" placeholder="OPEN/CLOSED" /></div>
+          <div class="field"><label>任务名称</label><input id="taskName" placeholder="创建/更新用" /></div>
+          <div class="field"><label>任务ID</label><input id="taskId" placeholder="UUID" /></div>
+        </div>
+        <div class="zone results">
+          <div id="taskTableWrap" class="row"></div>
+          <pre id="tasksOut" class="note"></pre>
+        </div>
       </section>
 
       <section id="time" class="card" hidden>
         <h1>工时</h1>
         <p class="note muted">默认 userId 使用令牌中的 <code id="userIdDefault"></code></p>
-        <div class="grid three">
-          <input id="teTaskId" placeholder="任务ID" />
-          <input id="teUserId" placeholder="用户ID (可留空)" />
-          <input id="teNotes" placeholder="备注 (可空)" />
-          <input id="teStart" placeholder="开始ISO (默认现在-1h)" />
-          <input id="teEnd" placeholder="结束ISO (默认现在)" />
-          <button id="teCreate">新建</button>
-          <input id="teId" placeholder="工时ID" />
-          <button id="teGet">查询</button>
-          <div class="row">
-            <button id="teUpdate" class="secondary">更新</button>
-            <button id="teDelete" class="secondary">删除</button>
-          </div>
-          <input id="teFilterStart" placeholder="过滤：开始ISO" />
-          <input id="teFilterEnd" placeholder="过滤：结束ISO" />
+        <div class="zone actions">
           <button id="teList">列表</button>
+          <button id="teGet" class="secondary">查询</button>
+          <button id="teCreate">新建</button>
+          <button id="teUpdate" class="secondary">更新</button>
+          <button id="teDelete" class="secondary">删除</button>
         </div>
-        <div id="teTableWrap" class="row"></div>
-        <pre id="teOut" class="note"></pre>
+        <div class="zone inputs grid three">
+          <div class="field"><label>任务ID</label><input id="teTaskId" placeholder="任务ID" /></div>
+          <div class="field"><label>用户ID</label><input id="teUserId" placeholder="可留空=JWT.sub" /></div>
+          <div class="field"><label>备注</label><input id="teNotes" placeholder="备注 (可空)" /></div>
+          <div class="field"><label>开始时间</label><input id="teStart" placeholder="ISO，默认现在-1h" /></div>
+          <div class="field"><label>结束时间</label><input id="teEnd" placeholder="ISO，默认现在" /></div>
+          <div class="field"><label>工时ID</label><input id="teId" placeholder="UUID" /></div>
+          <div class="field"><label>过滤开始</label><input id="teFilterStart" placeholder="ISO" /></div>
+          <div class="field"><label>过滤结束</label><input id="teFilterEnd" placeholder="ISO" /></div>
+        </div>
+        <div class="zone results">
+          <div id="teTableWrap" class="row"></div>
+          <pre id="teOut" class="note"></pre>
+        </div>
       </section>
 
       <section id="reports" class="card" hidden>
         <h1>报表</h1>
-        <div class="grid three">
-          <input id="rPeriod" placeholder="week|month (默认 week)" />
-          <input id="rProjectId" placeholder="项目ID (可选)" />
-          <input id="rUserId" placeholder="用户ID (可选)" />
+        <div class="zone actions">
           <button id="rJson">JSON</button>
           <button id="rCsv" class="secondary">CSV</button>
         </div>
-        <pre id="reportOut" class="note"></pre>
+        <div class="zone inputs grid three">
+          <div class="field"><label>周期</label><input id="rPeriod" placeholder="week|month (默认 week)" /></div>
+          <div class="field"><label>项目ID (可选)</label><input id="rProjectId" placeholder="UUID" /></div>
+          <div class="field"><label>用户ID (可选)</label><input id="rUserId" placeholder="UUID" /></div>
+        </div>
+        <div class="zone results">
+          <pre id="reportOut" class="note"></pre>
+        </div>
       </section>
 
       <section id="health" class="card" hidden>
         <h1>健康检查</h1>
-        <div class="toolbar">
+        <div class="zone actions">
           <button id="btnHealth">检查 /api/health</button>
           <a class="secondary" id="linkOpenApi" target="_blank" rel="noreferrer">打开 OpenAPI JSON</a>
         </div>
-        <pre id="healthOut" class="note"></pre>
+        <div class="zone inputs">
+          <div class="note muted">无需输入。</div>
+        </div>
+        <div class="zone results">
+          <pre id="healthOut" class="note"></pre>
+        </div>
       </section>
 
       <div id="toast" class="toast"></div>

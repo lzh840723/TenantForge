@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TenantForge SaaS Starter</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .container{max-width:760px;margin:40px auto;padding:0 16px}
+    .row{margin:12px 0}
+    input,button{padding:8px 10px}
+    input{width:100%;box-sizing:border-box}
+    code{background:#f5f5f5;padding:2px 4px;border-radius:3px}
+    .muted{color:#666}
+    .ok{color:green}
+    .err{color:#b00}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    pre{background:#f7f7f7;padding:8px;overflow:auto}
+  </style>
+  <script src="config.js"></script>
+  <script>
+    // Resolve a sensible default Base URL with multiple fallbacks so we don't have to hardcode.
+    const defaultBase = (() => {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const q = params.get('base') || params.get('backend') || params.get('url');
+        if (q) return q;
+      } catch (e) {}
+      const meta = document.querySelector('meta[name="backend-base-url"]');
+      if (meta && meta.content) return meta.content;
+      if (typeof window !== 'undefined' && window.BACKEND_BASE_URL) return window.BACKEND_BASE_URL;
+      return 'http://localhost:8080';
+    })();
+
+    function getBase(){ return localStorage.getItem('backendBaseUrl') || defaultBase; }
+    function setBase(v){ localStorage.setItem('backendBaseUrl', v); }
+    async function req(path, method='GET', body=null, token=null){
+      const headers = {'Content-Type':'application/json'};
+      if(token){ headers['Authorization'] = 'Bearer '+token; }
+      const resp = await fetch(getBase()+path, {method, headers, body: body?JSON.stringify(body):null});
+      const text = await resp.text();
+      let data; try{ data = JSON.parse(text); } catch(e){ data = text; }
+      return {ok: resp.ok, status: resp.status, data};
+    }
+    async function onRegister(){
+      const tenantName = document.getElementById('tenantName').value;
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const displayName = document.getElementById('displayName').value;
+      const btn = document.getElementById('registerBtn') || {disabled:false,textContent:''};
+      btn.disabled = true; btn.textContent = 'Registering...';
+      try {
+        const r = await req('/api/auth/register','POST',{tenantName,email,password,displayName});
+        if(r.ok){
+          localStorage.setItem('accessToken', r.data.accessToken);
+          const el = document.getElementById('registerOut');
+          el.className = 'ok';
+          el.textContent = '✅ Registered successfully. Access token stored. You can proceed to protected APIs.';
+        } else {
+          show('registerOut', r);
+        }
+      } finally {
+        btn.disabled = false; btn.textContent = 'Register';
+      }
+    }
+    async function onLogin(){
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const btn = document.getElementById('loginBtn') || {disabled:false,textContent:''};
+      btn.disabled = true; btn.textContent = 'Logging in...';
+      try {
+        const r = await req('/api/auth/login','POST',{email,password});
+        if(r.ok){
+          localStorage.setItem('accessToken', r.data.accessToken);
+          const el = document.getElementById('loginOut');
+          el.className = 'ok';
+          el.textContent = '✅ Logged in successfully. Token stored.';
+        } else {
+          show('loginOut', r);
+        }
+      } finally {
+        btn.disabled = false; btn.textContent = 'Login';
+      }
+    }
+    async function onProjects(){
+      const token = localStorage.getItem('accessToken');
+      const r = await req('/api/projects','GET',null, token);
+      show('projectsOut', r);
+    }
+    function normalizeBase(v){
+      if(!v) return v;
+      let s = v.trim();
+      if(!/^https?:\/\//i.test(s)) s = 'https://' + s; // auto-prepend scheme
+      s = s.replace(/\/$/, '');
+      return s;
+    }
+    function onBase(){
+      const raw = document.getElementById('base').value;
+      const v = normalizeBase(raw);
+      setBase(v);
+      document.getElementById('baseNow').textContent=getBase();
+    }
+    function show(id, r){
+      const el = document.getElementById(id);
+      el.className = r.ok? 'ok' : 'err';
+      el.textContent = 'HTTP '+r.status+'\n'+ (typeof r.data==='string'? r.data : JSON.stringify(r.data,null,2));
+    }
+    window.addEventListener('DOMContentLoaded', ()=>{
+      // Persist default if nothing saved yet and default looks non-local
+      const saved = localStorage.getItem('backendBaseUrl');
+      if(!saved && defaultBase && defaultBase !== 'http://localhost:8080'){
+        setBase(defaultBase);
+      }
+      document.getElementById('baseNow').textContent=getBase();
+    });
+  </script>
+</head>
+<body>
+  <main class="container">
+    <h1>TenantForge SaaS Starter</h1>
+    <p class="muted">Set your backend base URL then register/login below. Current base: <code id="baseNow"></code></p>
+    <div class="row grid">
+      <input id="base" placeholder="Backend Base URL (e.g. https://xxx.up.railway.app)">
+      <button onclick="onBase()">Save Base URL</button>
+    </div>
+    <section>
+      <h2>Register</h2>
+      <div class="row grid">
+        <input id="tenantName" placeholder="Tenant Name" value="demo-tenant">
+        <input id="displayName" placeholder="Display Name" value="Demo Owner">
+      </div>
+      <div class="row grid">
+        <input id="email" placeholder="Email" value="demo@tenantforge.dev">
+        <input id="password" placeholder="Password" type="password" value="Password123!">
+      </div>
+      <div class="row"><button id="registerBtn" onclick="onRegister()">Register</button></div>
+      <pre id="registerOut"></pre>
+    </section>
+    <section>
+      <h2>Login</h2>
+      <div class="row"><button id="loginBtn" onclick="onLogin()">Login</button></div>
+      <pre id="loginOut"></pre>
+    </section>
+    <section>
+      <h2>Projects</h2>
+      <div class="row"><button onclick="onProjects()">List Projects</button></div>
+      <pre id="projectsOut"></pre>
+    </section>
+  </main>
+</body>
+</html>

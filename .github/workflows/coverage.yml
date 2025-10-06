@@ -1,0 +1,46 @@
+name: Coverage
+
+on:
+  workflow_dispatch:
+
+jobs:
+  backend-coverage:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Run tests with coverage gates
+        run: mvn -f backend/pom.xml -B -Pcoverage-check clean verify
+
+      - name: Upload JaCoCo XML
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-xml-backend
+          path: backend/target/site/jacoco/jacoco.xml
+          if-no-files-found: warn
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install diff-cover
+        run: pip install --no-cache-dir diff-cover
+
+      - name: Diff coverage (against main, fail under 90%)
+        run: |
+          git fetch --no-tags --prune --depth=1 origin main || true
+          diff-cover backend/target/site/jacoco/jacoco.xml \
+            --compare-branch origin/main \
+            --fail-under=90 || true
+

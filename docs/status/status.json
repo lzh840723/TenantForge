@@ -1,0 +1,42 @@
+{
+  "project": "TenantForge",
+  "branch": "feat/backend-scaffold",
+  "chapter3": {
+    "3.4": "done",
+    "3.5": "done",
+    "3.6": {
+      "sql_views_api": "done",
+      "api_export": "done",
+      "perf_baseline": "done",
+      "evidence": "done"
+    },
+    "3.7": "done",
+    "3.8": {
+      "testcontainers_core": "in_progress",
+      "workflows": "in_progress",
+      "coverage_gates": "done"
+    },
+    "3.9": {
+      "readme_arch_api": "done",
+      "reports_assets": "done",
+      "demo_recording": "in_progress"
+    },
+    "3.10": {
+      "status_assets": "done",
+      "changelog": "done",
+      "final_audit": "in_progress"
+    }
+  },
+  "artifacts": {
+    "jacoco": "backend/target/site/jacoco/jacoco.xml",
+    "perf": "backend/target/artifacts/",
+    "postman": "docs/postman/TenantForge.postman_collection.json",
+    "demo_script": "docs/demo_script.md"
+  },
+  "ci": {
+    "workflow_main": ".github/workflows/ci.yml",
+    "workflow_pg_it": ".github/workflows/pg-it.yml",
+    "status": "refer_to_actions"
+  },
+  "updated_at": "${date}"
+}

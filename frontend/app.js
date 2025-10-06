@@ -447,7 +447,23 @@
 
     // reports
     $('#rJson').addEventListener('click', async ()=>{ if(!requireAuth()) return; const p=getReportParams(); const r=await api('/api/reports/time?'+p.toString()); renderOut(r,'#reportOut'); });
-    $('#rCsv').addEventListener('click', async ()=>{ if(!requireAuth()) return; const p=getReportParams(); p.set('format','csv'); const u=normalizeBaseStrict(state.base)+'/api/reports/time?'+p.toString(); window.open(u,'_blank'); });
+    $('#rCsv').addEventListener('click', async ()=>{
+      if(!await requireAuth()) return;
+      const p=getReportParams(); p.set('format','csv');
+      const url = normalizeBaseStrict(state.base)+'/api/reports/time?'+p.toString();
+      try{
+        const resp = await fetch(url, { headers: { 'Authorization': 'Bearer '+state.access } });
+        if(resp.status===401){ const ok = await doRefresh(); if(!ok) { toast('请先登录','err'); return; } return $('#rCsv').click(); }
+        if(!resp.ok){ const text=await resp.text(); renderOut({ok:false,status:resp.status,data:text}, '#reportOut'); return; }
+        const blob = await resp.blob();
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        const ts = new Date().toISOString().replace(/[:.]/g,'-');
+        a.download = 'time-report-'+ts+'.csv';
+        document.body.appendChild(a); a.click(); a.remove();
+        toast('CSV 已下载');
+      }catch(e){ renderOut({ok:false,status:0,data:String(e)}, '#reportOut'); }
+    });
 
     // health
     $('#btnHealth').addEventListener('click', async ()=>{ const r=await api('/api/health'); renderOut(r,'#healthOut'); if(r.ok) toast('健康：OK'); });

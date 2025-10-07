@@ -78,11 +78,16 @@ Tips
 - Docker (only if you want to run the compose stack locally)
 
 ## Environment Variables
-Sensitive values are stored in `local_notes/.env` and should **not** be committed. Load them when needed (the file uses `#` comments so it can be sourced safely):
+Use `.env.example` as the template and create a local, untracked file such as
+`.env.local` with your values. Do not commit real secrets.
 
 ```bash
+cp .env.example .env.local
+# edit .env.local to fill in values
+
+# optional: load into current shell
 set -a
-source local_notes/.env
+source .env.local
 set +a
 ```
 
@@ -121,11 +126,11 @@ psql "$DIRECT_CONNECTION" -f supabase/010_enable_rls.sql
 
 ## Deploy to Railway
 
-Railway can build a Spring Boot service directly from this repository. Prepare the CLI with the required IDs and token listed in `local_notes/.env`:
+Railway can build a Spring Boot service directly from this repository. Prepare the CLI with the required IDs and token (exported from your secrets manager or `.env.local`):
 
 ```bash
 set -a
-source local_notes/.env
+source .env.local || true
 set +a
 
 # The script reads the following variables (IDs preferred for stability):

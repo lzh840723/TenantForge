@@ -1,7 +1,10 @@
 # Supabase Setup
 
-1. Export credentials locally (values stored in `local_notes/.env`):
+1. Export credentials locally (use your secrets manager or a local untracked file like `.env.local`):
    ```bash
+   # Example if you keep a local .env.local (never commit it)
+   set -a; source .env.local; set +a
+   # Or export values explicitly
    export DIRECT_CONNECTION="$DIRECT_CONNECTION"
    export TRANSACTION_POOLER="$TRANSACTION_POOLER"
    ```

@@ -21,6 +21,54 @@ Multi-tenant project & time tracking starter kit built with Spring Boot, Postgre
 - Swagger UI: `/swagger-ui/index.html`
 - OpenAPI JSON: `/v3/api-docs`
 
+## Frontend Console (Vercel/Static)
+
+The repository ships a minimal, no-build static console under `frontend/` that
+exercises all backend capabilities. It runs on Vercel in production, or you can
+serve it locally.
+
+- Default backend base
+  - The console reads `window.BACKEND_BASE_URL` from `frontend/config.js` at
+    runtime. This repository sets it to the production domain by default.
+  - You can override per-visit with a query string, for example:
+    `?base=https://tenantforge-production.up.railway.app` (aliases: `backend`,
+    `url`).
+
+- Run locally
+  - Option A (Node): `npx serve frontend`
+  - Option B (Python): `python3 -m http.server -d frontend 5173`
+  - Then open `http://localhost:<port>/` and adjust Backend Base if needed.
+
+- UI layout and usage
+  - The console uses a consistent three-zone layout in each section:
+    Actions → Inputs → Results. Buttons trigger requests; inputs provide
+    parameters; results show the HTTP code and body (tables for lists).
+  - Auth
+    - Register creates a tenant and owner, returning an access/refresh token
+      pair. Login also returns a token pair. Tokens are stored locally.
+    - “Copy Access” copies the JWT. The client auto-refreshes on 401 when a
+      refresh token is available.
+  - Projects
+    - List shows a table; click a row to populate inputs. Project ID is
+      read‑only; Update/Delete require selecting a row. Query searches by name
+      and renders a table.
+  - Tasks
+    - Requires a Project ID. Pick a project on the Projects page first; the ID
+      is remembered and prefilled. Status values used by the UI: NEW/OPEN/CLOSED.
+  - Time Entries
+    - Requires a Task ID; User ID defaults to the current JWT subject. Timestamps
+      must be ISO8601 (UTC recommended). A “Seed” helper can create demo rows.
+  - Reports
+    - Choose `period=week|month` and optional filters. JSON renders as JSON;
+      CSV is fetched with Authorization and shown inline in the results area.
+  - Health
+    - Calls `/api/health` and shows the response.
+
+Tips
+- Backend Base normalization accepts schemeless inputs and trims trailing slash.
+- If refresh fails or you are not signed in, the console will route you to Auth
+  and display a clear message.
+
 ## Prerequisites
 - Java 21
 - Maven 3.9+

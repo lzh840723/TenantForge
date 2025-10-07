@@ -108,6 +108,15 @@ jobs:
           path: backend/target/artifacts/
           if-no-files-found: ignore
 
+      - name: Docs sanity check (no internal paths)
+        run: |
+          # Fail if public docs reference internal-only folders like local_notes
+          set -e
+          if rg -n "local_notes/" README.md docs 2>/dev/null; then
+            echo "Internal path 'local_notes/' referenced in public docs. Please remove." >&2
+            exit 1
+          fi
+
       # Diff coverage gating can be enabled later once stable; keep jacoco.xml artifact for reviewers
 
   deploy-backend:

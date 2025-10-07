@@ -63,31 +63,31 @@
   function isAccessValid(){ const exp=accessExp(); return !!state.access && (!exp || Date.now()<exp-5000); }
   async function requireAuth(){
     if(!state.access){
-      toast('请先登录后再执行该操作','err');
+      toast('Please sign in first','err');
       const ao = document.querySelector('#authOut');
-      if(ao){ ao.className='err note'; ao.textContent='请先登录（在左侧“认证”页注册或登录）'; ao.style.display=''; }
+      if(ao){ ao.className='err note'; ao.textContent='Please sign in (open "Auth" on the left)'; ao.style.display=''; }
       try{ setActive('auth'); }catch(e){}
       const email = document.querySelector('#email'); if(email) email.focus();
       return false;
     }
     if(!isAccessValid()){
       const ok = await doRefresh();
-      if(!ok){ toast('登录状态已过期，请重新登录','err'); try{ setActive('auth'); }catch(e){}; return false; }
+      if(!ok){ toast('Session expired, please sign in again','err'); try{ setActive('auth'); }catch(e){}; return false; }
     }
     return true;
   }
   function requireUuid(id){
-    if(!isUuid(id||'')){ toast('请先选择表格中的一行，或输入有效的 UUID','err'); return false; }
+    if(!isUuid(id||'')){ toast('Select a row or enter a valid UUID','err'); return false; }
     return true;
   }
 
   async function doRefresh(){
-    if(!state.refresh){ toast('无刷新令牌','warn'); return false; }
+    if(!state.refresh){ toast('No refresh token','warn'); return false; }
     const r = await api('/api/auth/refresh', {method:'POST', body:{refreshToken: state.refresh}, noAuth:true});
     if(r.ok){
-      state.access = r.data.accessToken; state.refresh = r.data.refreshToken; clearLoginNotice(); toast('已刷新令牌','ok'); return true;
+      state.access = r.data.accessToken; state.refresh = r.data.refreshToken; clearLoginNotice(); toast('Token refreshed','ok'); return true;
     }
-    toast('刷新失败：'+(r.status||'') ,'err'); return false;
+    toast('Refresh failed: '+(r.status||'') ,'err'); return false;
   }
 
   function renderBase(){ $('#baseNow').textContent = state.base; }
@@ -175,7 +175,7 @@
     // nav
     $$('#nav a').forEach(a=> a.addEventListener('click', (e)=>{ e.preventDefault(); setActive(a.dataset.target); history.replaceState(null,'','#'+a.dataset.target); }));
     // base
-    $('#btnSaveBase').addEventListener('click', ()=>{ const v=normalizeBaseStrict($('#base').value); state.base=v; toast('已保存后端地址'); $('#linkOpenApi').href=state.base+'/v3/api-docs'; });
+    $('#btnSaveBase').addEventListener('click', ()=>{ const v=normalizeBaseStrict($('#base').value); state.base=v; toast('Backend base saved'); $('#linkOpenApi').href=state.base+'/v3/api-docs'; });
 
     // auth
     $('#registerBtn').addEventListener('click', async ()=>{
@@ -183,20 +183,20 @@
         tenantName: $('#tenantName').value, email: $('#email').value, password: $('#password').value, displayName: $('#displayName').value
       };
       const r = await api('/api/auth/register',{method:'POST', body});
-      if(r.ok){ state.access=r.data.accessToken; state.refresh=r.data.refreshToken; clearLoginNotice(); $('#registerOut').className='ok'; $('#registerOut').textContent='✅ 注册成功'; toast('注册成功'); }
+      if(r.ok){ state.access=r.data.accessToken; state.refresh=r.data.refreshToken; clearLoginNotice(); $('#registerOut').className='ok'; $('#registerOut').textContent='✅ Registered'; toast('Registered'); }
       else { $('#registerOut').className='err'; $('#registerOut').textContent=fmt(r); }
       btn.disabled=false;
     });
     $('#loginBtn').addEventListener('click', async ()=>{
       const btn=$('#loginBtn'); btn.disabled=true; const body={ email: $('#email').value, password: $('#password').value };
       const r = await api('/api/auth/login',{method:'POST', body});
-      if(r.ok){ state.access=r.data.accessToken; state.refresh=r.data.refreshToken; clearLoginNotice(); $('#loginOut').className='ok'; $('#loginOut').textContent='✅ 登录成功'; toast('登录成功'); }
+      if(r.ok){ state.access=r.data.accessToken; state.refresh=r.data.refreshToken; clearLoginNotice(); $('#loginOut').className='ok'; $('#loginOut').textContent='✅ Signed in'; toast('Signed in'); }
       else { $('#loginOut').className='err'; $('#loginOut').textContent=fmt(r); }
       btn.disabled=false;
     });
     $('#btnRefresh').addEventListener('click', doRefresh);
-    $('#btnLogout').addEventListener('click', ()=>{ state.access=''; state.refresh=''; toast('已退出'); });
-    $('#btnCopyAccess').addEventListener('click', async ()=>{ if(!state.access){ toast('无 Access Token'); return; } await navigator.clipboard.writeText(state.access); toast('已复制 Access'); });
+    $('#btnLogout').addEventListener('click', ()=>{ state.access=''; state.refresh=''; toast('Signed out'); });
+    $('#btnCopyAccess').addEventListener('click', async ()=>{ if(!state.access){ toast('No access token'); return; } await navigator.clipboard.writeText(state.access); toast('Access copied'); });
 
     // projects
     $('#projList').addEventListener('click', async ()=>{ if(!requireAuth()) return; const q = new URLSearchParams({ q: $('#projQ').value, page:'0', size:'20', sort:'createdAt', order:'desc' }); const r = await api('/api/projects?'+q.toString()); renderList(r, '#projTableWrap', ['id','name','description','createdAt'], (row)=>{ $('#projId').value=row.id; $('#projName').value=row.name; $('#projDesc').value=row.description||''; rememberProjectId(row.id); }); });
@@ -205,7 +205,7 @@
       const r = await api('/api/projects',{method:'POST', body:{ name: $('#projName').value, description: $('#projDesc').value }});
       renderOut(r,'#projectsOut');
       if(r.ok){
-        toast('项目已创建');
+        toast('Project created');
         const id = r.data && r.data.id; if(id){ $('#projId').value = id; $('#projName').value = r.data.name||$('#projName').value; $('#projDesc').value = r.data.description||$('#projDesc').value; const r2 = await api('/api/projects/'+id); renderOut(r2,'#projectsOut'); }
         const btn = $('#projList'); if(btn) btn.click();
       }
@@ -218,7 +218,7 @@
       if(!r.ok){ renderOut(r,'#projectsOut'); return; }
       const wrap = '#projTableWrap';
       const data = Array.isArray(r.data?.content) ? r.data.content : (Array.isArray(r.data)? r.data : []);
-      if(data.length === 0){ const el=document.querySelector(wrap); if(el) el.innerHTML='<div class="muted">未找到匹配记录</div>'; renderOut({ok:true,status:200,data:[]}, '#projectsOut'); return; }
+      if(data.length === 0){ const el=document.querySelector(wrap); if(el) el.innerHTML='<div class="muted">No matching records</div>'; renderOut({ok:true,status:200,data:[]}, '#projectsOut'); return; }
       renderList({ok:true,status:200,data}, wrap, ['id','name','description','createdAt'], (row)=>{ $('#projId').value=row.id; $('#projName').value=row.name; $('#projDesc').value=row.description||''; });
       renderOut({ok:true,status:200,data}, '#projectsOut');
     });
@@ -232,8 +232,8 @@
       });
       renderOut(r,'#projectsOut');
       if(r.ok){
-        toast('项目已更新');
-        // 刷新“表示区域”：拉取最新详情，并尝试刷新列表
+        toast('Project updated');
+        // Refresh display area and list
         const r2 = await api('/api/projects/'+id);
         renderOut(r2,'#projectsOut');
         const btn = $('#projList'); if(btn) btn.click();
@@ -248,14 +248,14 @@
       if(!r.ok){ renderOut(r,'#projectsOut'); return; }
       // 成功删除时，用友好的提示替代 HTTP 204
       const el = document.querySelector('#projectsOut');
-      if(el){ el.className='ok note'; el.textContent='✅ 已删除'; }
-      toast('项目已删除');
+      if(el){ el.className='ok note'; el.textContent='✅ Deleted'; }
+      toast('Project deleted');
       // 清空已删除的ID并刷新列表（保留当前筛选条件）
       $('#projId').value='';
       const btn=$('#projList'); if(btn) btn.click();
       await refreshProjectsOutFromFilters();
     });
-    $('#projCopyId').addEventListener('click', async ()=>{ const id=$('#projId').value.trim(); if(!isUuid(id)){ toast('尚未选择项目','err'); return; } await navigator.clipboard.writeText(id); toast('已复制项目ID'); });
+    $('#projCopyId').addEventListener('click', async ()=>{ const id=$('#projId').value.trim(); if(!isUuid(id)){ toast('No project selected','err'); return; } await navigator.clipboard.writeText(id); toast('Project ID copied'); });
 
     // tasks
     $('#taskList').addEventListener('click', async ()=>{
@@ -272,11 +272,11 @@
     $('#taskCreate').addEventListener('click', async ()=>{
       if(!requireAuth()) return;
       const pid = ($('#taskProjectId').value.trim() || lastProjectId());
-      if(!requireUuid(pid)) { toast('请先选择项目ID（到“项目”页点一行，或在此粘贴）','err'); return; }
+      if(!requireUuid(pid)) { toast('Select a Project ID (pick a row on Projects)','err'); return; }
       const r=await api('/api/tasks',{method:'POST', body:{ projectId: pid, name:$('#taskName').value }});
       renderOut(r,'#tasksOut');
       if(r.ok){
-        toast('任务已创建');
+        toast('Task created');
         const id = r.data && r.data.id; if(id){ $('#taskId').value = id; $('#taskName').value = r.data.name||$('#taskName').value; $('#taskStatus').value = r.data.status||$('#taskStatus').value; $('#taskProjectId').value = r.data.projectId || pid; const r2 = await api('/api/tasks/'+id); renderOut(r2,'#tasksOut'); }
         const btn = $('#taskList'); if(btn) btn.click();
         await refreshTasksOutFromFilters();
@@ -294,7 +294,7 @@
       if(!r.ok){ renderOut(r,'#tasksOut'); return; }
       const wrap = '#taskTableWrap';
       const data = Array.isArray(r.data?.content) ? r.data.content : (Array.isArray(r.data)? r.data : []);
-      if(data.length === 0){ const el=document.querySelector(wrap); if(el) el.innerHTML='<div class="muted">未找到匹配记录</div>'; renderOut({ok:true,status:200,data:[]}, '#tasksOut'); return; }
+      if(data.length === 0){ const el=document.querySelector(wrap); if(el) el.innerHTML='<div class="muted">No matching records</div>'; renderOut({ok:true,status:200,data:[]}, '#tasksOut'); return; }
       renderList({ok:true,status:200,data}, wrap, ['id','projectId','name','status','createdAt'], (row)=>{ $('#taskId').value=row.id; $('#taskName').value=row.name; $('#taskStatus').value=row.status||''; $('#taskProjectId').value=row.projectId||''; });
       renderOut({ok:true,status:200,data}, '#tasksOut');
     });
@@ -307,7 +307,7 @@
       });
       renderOut(r,'#tasksOut');
       if(r.ok){
-        toast('任务已更新');
+        toast('Task updated');
         const r2 = await api('/api/tasks/'+id);
         renderOut(r2,'#tasksOut');
         const btn = $('#taskList'); if(btn) btn.click();
@@ -321,29 +321,29 @@
       const r=await api('/api/tasks/'+id,{method:'DELETE'});
       if(!r.ok){ renderOut(r,'#tasksOut'); return; }
       const el = document.querySelector('#tasksOut');
-      if(el){ el.className='ok note'; el.textContent='✅ 已删除'; }
-      toast('任务已删除');
+      if(el){ el.className='ok note'; el.textContent='✅ Deleted'; }
+      toast('Task deleted');
       $('#taskId').value='';
       const btn=$('#taskList'); if(btn) btn.click();
       await refreshTasksOutFromFilters();
     });
-    $('#taskCopyId').addEventListener('click', async ()=>{ const id=$('#taskId').value.trim(); if(!isUuid(id)){ toast('尚未选择任务','err'); return; } await navigator.clipboard.writeText(id); toast('已复制任务ID'); });
+    $('#taskCopyId').addEventListener('click', async ()=>{ const id=$('#taskId').value.trim(); if(!isUuid(id)){ toast('No task selected','err'); return; } await navigator.clipboard.writeText(id); toast('Task ID copied'); });
 
     // time entries
     $('#teCreate').addEventListener('click', async ()=>{
       if(!await requireAuth()) return;
       let taskId = $('#teTaskId').value.trim();
-      if(!isUuid(taskId)){ toast('请先选择有效的任务ID（到“任务”页点表格一行）','err'); return; }
+      if(!isUuid(taskId)){ toast('Select a valid Task ID (click a row on Tasks)','err'); return; }
       let userIdIn = $('#teUserId').value.trim();
       let userId = isUuid(userIdIn) ? userIdIn : userIdFromAccess();
-      if(!isUuid(userId)){ toast('无法确定用户ID，请先登录','err'); return; }
+      if(!isUuid(userId)){ toast('Cannot determine userId, please sign in','err'); return; }
       const started = $('#teStart').value && !isNaN(Date.parse($('#teStart').value)) ? $('#teStart').value : isoMinusHours(1);
       const ended   = $('#teEnd').value && !isNaN(Date.parse($('#teEnd').value))   ? $('#teEnd').value   : isoNow();
       const body={ taskId, userId, startedAt: started, endedAt: ended, notes:$('#teNotes').value };
       const r=await api('/api/time-entries',{method:'POST', body});
       renderOut(r,'#teOut');
       if(r.ok){
-        toast('工时已创建');
+        toast('Time entry created');
         const id = r.data && r.data.id; if(id){ $('#teId').value = id; const r2 = await api('/api/time-entries/'+id); renderOut(r2,'#teOut'); }
         const btn = $('#teList'); if(btn) btn.click();
         await refreshTeOutFromFilters();
@@ -361,7 +361,7 @@
       if(!r.ok){ renderOut(r,'#teOut'); return; }
       const wrap = '#teTableWrap';
       const data = Array.isArray(r.data?.content) ? r.data.content : (Array.isArray(r.data)? r.data : []);
-      if(data.length === 0){ const el=document.querySelector(wrap); if(el) el.innerHTML='<div class="muted">未找到匹配记录</div>'; renderOut({ok:true,status:200,data:[]}, '#teOut'); return; }
+      if(data.length === 0){ const el=document.querySelector(wrap); if(el) el.innerHTML='<div class="muted">No matching records</div>'; renderOut({ok:true,status:200,data:[]}, '#teOut'); return; }
       renderList({ok:true,status:200,data}, wrap, ['id','taskId','userId','startedAt','endedAt','notes'], (row)=>{ $('#teId').value=row.id; $('#teTaskId').value=row.taskId||''; $('#teUserId').value=row.userId||''; $('#teStart').value=row.startedAt||''; $('#teEnd').value=row.endedAt||''; $('#teNotes').value=row.notes||''; });
       renderOut({ok:true,status:200,data}, '#teOut');
     });
@@ -377,7 +377,7 @@
       const r = await api('/api/time-entries/'+id,{method:'PUT', body});
       renderOut(r,'#teOut');
       if(r.ok){
-        toast('工时已更新');
+        toast('Time entry updated');
         const r2 = await api('/api/time-entries/'+id);
         renderOut(r2,'#teOut');
         const btn = $('#teList'); if(btn) btn.click();
@@ -391,14 +391,14 @@
       const r=await api('/api/time-entries/'+id,{method:'DELETE'});
       if(!r.ok){ renderOut(r,'#teOut'); return; }
       const el = document.querySelector('#teOut');
-      if(el){ el.className='ok note'; el.textContent='✅ 已删除'; }
-      toast('工时已删除');
+      if(el){ el.className='ok note'; el.textContent='✅ Deleted'; }
+      toast('Time entry deleted');
       $('#teId').value='';
       const btn=$('#teList'); if(btn) btn.click();
       await refreshTeOutFromFilters();
     });
-    $('#teCopyId').addEventListener('click', async ()=>{ const id=$('#teId').value.trim(); if(!isUuid(id)){ toast('尚未选择工时','err'); return; } await navigator.clipboard.writeText(id); toast('已复制工时ID'); });
-    $('#teList').addEventListener('click', async ()=>{ if(!requireAuth()) return; const p=new URLSearchParams({ page:'0', size:'20', sort:'startedAt', order:'desc' }); const s=$('#teFilterStart').value; const e=$('#teFilterEnd').value; const tid=$('#teTaskId').value.trim(); const uid=$('#teUserId').value.trim(); if(s && !isNaN(Date.parse(s))) p.set('start', s); else if(s){ toast('过滤开始时间不是有效 ISO，已忽略','warn'); } if(e && !isNaN(Date.parse(e))) p.set('end', e); else if(e){ toast('过滤结束时间不是有效 ISO，已忽略','warn'); } if(isUuid(tid)) p.set('taskId', tid); if(isUuid(uid)) p.set('userId', uid); const r=await api('/api/time-entries?'+p.toString()); renderList(r,'#teTableWrap',['id','taskId','userId','startedAt','endedAt','notes'], (row)=>{ $('#teId').value=row.id; $('#teTaskId').value=row.taskId||''; $('#teUserId').value=row.userId||''; $('#teStart').value=row.startedAt||''; $('#teEnd').value=row.endedAt||''; $('#teNotes').value=row.notes||''; }); renderOut(r,'#teOut'); });
+    $('#teCopyId').addEventListener('click', async ()=>{ const id=$('#teId').value.trim(); if(!isUuid(id)){ toast('No time entry selected','err'); return; } await navigator.clipboard.writeText(id); toast('Time entry ID copied'); });
+    $('#teList').addEventListener('click', async ()=>{ if(!requireAuth()) return; const p=new URLSearchParams({ page:'0', size:'20', sort:'startedAt', order:'desc' }); const s=$('#teFilterStart').value; const e=$('#teFilterEnd').value; const tid=$('#teTaskId').value.trim(); const uid=$('#teUserId').value.trim(); if(s && !isNaN(Date.parse(s))) p.set('start', s); else if(s){ toast('Filter start is not valid ISO; ignored','warn'); } if(e && !isNaN(Date.parse(e))) p.set('end', e); else if(e){ toast('Filter end is not valid ISO; ignored','warn'); } if(isUuid(tid)) p.set('taskId', tid); if(isUuid(uid)) p.set('userId', uid); const r=await api('/api/time-entries?'+p.toString()); renderList(r,'#teTableWrap',['id','taskId','userId','startedAt','endedAt','notes'], (row)=>{ $('#teId').value=row.id; $('#teTaskId').value=row.taskId||''; $('#teUserId').value=row.userId||''; $('#teStart').value=row.startedAt||''; $('#teEnd').value=row.endedAt||''; $('#teNotes').value=row.notes||''; }); renderOut(r,'#teOut'); });
 
     // seed demo time entries
     $('#teSeed').addEventListener('click', async ()=>{
@@ -427,7 +427,7 @@
         $('#teTaskId').value = taskId;
       }
       const userId = ($('#teUserId').value.trim() || userIdFromAccess());
-      if(!isUuid(userId)){ toast('无法确定用户ID，请先登录','err'); return; }
+      if(!isUuid(userId)){ toast('Cannot determine userId, please sign in','err'); return; }
       // create 3 entries in the last 3 days
       const now = new Date();
       const mkIso = d=> new Date(d).toISOString();
@@ -441,7 +441,7 @@
         const r = await api('/api/time-entries', {method:'POST', body:{ taskId, userId, ...pld }});
         if(!r.ok){ renderOut(r,'#teOut'); return; }
       }
-      toast('已填充示例工时');
+      toast('Seeded sample time entries');
       const btn=$('#teList'); if(btn) btn.click();
     });
 
@@ -453,15 +453,15 @@
       const url = normalizeBaseStrict(state.base)+'/api/reports/time?'+p.toString();
       try{
         const resp = await fetch(url, { headers: { 'Authorization': 'Bearer '+state.access } });
-        if(resp.status===401){ const ok = await doRefresh(); if(!ok) { toast('请先登录','err'); return; } return $('#rCsv').click(); }
+        if(resp.status===401){ const ok = await doRefresh(); if(!ok) { toast('Please sign in','err'); return; } return $('#rCsv').click(); }
         const text = await resp.text();
         renderOut({ok: resp.ok, status: resp.status, data: text}, '#reportOut');
-        if(resp.ok) toast('CSV 已显示');
+        if(resp.ok) toast('CSV shown');
       }catch(e){ renderOut({ok:false,status:0,data:String(e)}, '#reportOut'); }
     });
 
     // health
-    $('#btnHealth').addEventListener('click', async ()=>{ const r=await api('/api/health'); renderOut(r,'#healthOut'); if(r.ok) toast('健康：OK'); });
+    $('#btnHealth').addEventListener('click', async ()=>{ const r=await api('/api/health'); renderOut(r,'#healthOut'); if(r.ok) toast('Health: OK'); });
   }
 
   function renderList(result, wrapSel, columns, onRowClick){
@@ -470,12 +470,12 @@
     if(!result.ok){ wrap.innerHTML = '<span class="err">'+fmt(result)+'</span>'; return; }
     const dataRaw = Array.isArray(result.data?.content) ? result.data.content : (Array.isArray(result.data) ? result.data : [result.data]);
     const data = dataRaw.filter(Boolean);
-    if(data.length===0){ wrap.innerHTML = '<div class="muted">未找到匹配记录</div>'; return; }
+    if(data.length===0){ wrap.innerHTML = '<div class="muted">No matching records</div>'; return; }
     const cols = columns.map(k=>({key:k,label:k}));
     const tbl = tableFrom(data, cols);
     tbl.querySelectorAll('tbody tr').forEach((tr,idx)=>{
       tr.style.cursor='pointer';
-      tr.addEventListener('click', ()=>{ onRowClick && onRowClick(data[idx]); toast('已选择一行'); });
+      tr.addEventListener('click', ()=>{ onRowClick && onRowClick(data[idx]); toast('Row selected'); });
     });
     wrap.appendChild(tbl);
   }

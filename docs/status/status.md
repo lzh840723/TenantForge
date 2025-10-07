@@ -1,7 +1,7 @@
 # TenantForge — Status
 
 Overview
-- Branch: feat/backend-scaffold
+- Branch: main
 - Scope: Chapter 3 (Multitenancy, Domain, Reports, Docs, CI/CD, Deliverables)
 
 Progress

@@ -143,9 +143,11 @@ local_notes/             Internal playbooks (.env stored here)
 ```
 
 ## Next Steps
-- Implement authentication, RBAC, and tenant context interceptors.
-- Add integration tests that validate RLS behaviour and audit logging.
-- Build CI/CD pipelines (GitHub Actions) to automate build + deploy.
+- Tighten CORS to final frontend domains via `CORS_ALLOWED_ORIGINS`.
+- Add end-to-end tests: Auth → Projects → Tasks → Time Entries → Reports (incl. 401 auto-refresh flow).
+- Document and/or enforce `Task.status` values (UI uses NEW/OPEN/CLOSED). Option: migrate to enum with validation.
+- Finalize demo evidence and close the acceptance checklist in `docs/status/`.
+- Ensure deployment secrets are present so CI can auto-deploy (Railway and Vercel tokens/IDs).
 ## Makefile
 - Format: `make format`
 - Lint: `make lint`

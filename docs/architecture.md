@@ -3,7 +3,7 @@
 Overview
 - Backend: Spring Boot (Java 21), JPA/Hibernate, JWT Security, Micrometer/Actuator.
 - Database: PostgreSQL (Supabase). RLS policies restrict data per-tenant via session GUC `app.tenant_id`.
-- Frontend: Static landing page (Vercel) [placeholder].
+- Frontend: Static console (Vercel). Provides Auth, Projects, Tasks, Time Entries, Reports, and Health sections with a consistent three‑zone layout (Actions → Inputs → Results). Default backend base can be set in `frontend/config.js`. The console stores tokens locally and auto‑refreshes on 401; CSV reports are fetched with Authorization and rendered inline in the results area.
 - CI/CD: GitHub Actions, deploy hooks for Railway/Vercel.
 
 Key Flows

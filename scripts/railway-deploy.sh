@@ -6,23 +6,23 @@ REPO_ROOT=$(cd "${SCRIPT_DIR}/.." && pwd)
 
 TOKEN=${RAILWAY_TOKEN:-${RAILWAY_API_KEY:-}}
 if [[ -z "${TOKEN}" ]]; then
-  echo "RAILWAY_TOKEN (或 RAILWAY_API_KEY) 未设置，无法调用 Railway CLI。" >&2
+  echo "RAILWAY_TOKEN (or RAILWAY_API_KEY) not set; Railway CLI cannot be used." >&2
   exit 1
 fi
 
 if ! command -v railway >/dev/null 2>&1; then
-  echo "未检测到 railway CLI，请先执行 \"brew install railway\"。" >&2
+  echo "railway CLI not found. Please install it (e.g., brew install railway)." >&2
   exit 1
 fi
 
-: "${SPRING_DATASOURCE_URL?SPRING_DATASOURCE_URL 未设置}"
-: "${SPRING_DATASOURCE_USERNAME?SPRING_DATASOURCE_USERNAME 未设置}"
-: "${SPRING_DATASOURCE_PASSWORD?SPRING_DATASOURCE_PASSWORD 未设置}"
-: "${JWT_SECRET?JWT_SECRET 未设置}"
+: "${SPRING_DATASOURCE_URL?SPRING_DATASOURCE_URL is required}"
+: "${SPRING_DATASOURCE_USERNAME?SPRING_DATASOURCE_USERNAME is required}"
+: "${SPRING_DATASOURCE_PASSWORD?SPRING_DATASOURCE_PASSWORD is required}"
+: "${JWT_SECRET?JWT_SECRET is required}"
 
-PROJECT_ID=${RAILWAY_PROJECT_ID:?需要设置 RAILWAY_PROJECT_ID}
-ENVIRONMENT_ID=${RAILWAY_ENVIRONMENT_ID:?需要设置 RAILWAY_ENVIRONMENT_ID}
-SERVICE_ID=${RAILWAY_SERVICE_ID:?需要设置 RAILWAY_SERVICE_ID}
+PROJECT_ID=${RAILWAY_PROJECT_ID:?RAILWAY_PROJECT_ID is required}
+ENVIRONMENT_ID=${RAILWAY_ENVIRONMENT_ID:?RAILWAY_ENVIRONMENT_ID is required}
+SERVICE_ID=${RAILWAY_SERVICE_ID:?RAILWAY_SERVICE_ID is required}
 SERVICE_NAME=${RAILWAY_SERVICE_NAME:-TenantForge}
 ENVIRONMENT_NAME=${RAILWAY_ENVIRONMENT_NAME:-production}
 
@@ -49,19 +49,19 @@ update_vars() {
     --skip-deploys >/dev/null
 }
 
-echo "同步 Railway 环境变量..."
+echo "Syncing Railway environment variables..."
 if ! update_vars; then
-  echo "同步环境变量失败，检查 token 或服务配置。" >&2
+  echo "Failed to sync environment variables. Check token/service configuration." >&2
   exit 1
 fi
 
-echo "构建 Spring Boot JAR..."
+echo "Building Spring Boot JAR..."
 ( cd "${REPO_ROOT}/backend" && mvn -B -DskipTests package )
 
-echo "推送代码到 Railway..."
+echo "Pushing code to Railway..."
 if ! ( cd "${REPO_ROOT}/backend" && railway up --service "${SERVICE_NAME}" --environment "${ENVIRONMENT_NAME}" --ci ); then
-  echo "Railway 部署命令执行失败，可运行 \"railway logs --service ${SERVICE_NAME}\" 查看详情。" >&2
+  echo "Railway deploy failed. Inspect logs with: railway logs --service ${SERVICE_NAME}" >&2
   exit 1
 fi
 
-echo "部署命令已执行，如需查看日志可运行：railway logs --service ${SERVICE_NAME}"
+echo "Deployment triggered. To view logs: railway logs --service ${SERVICE_NAME}"

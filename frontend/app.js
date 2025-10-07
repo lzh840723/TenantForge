@@ -90,7 +90,9 @@
     toast('Refresh failed: '+(r.status||'') ,'err'); return false;
   }
 
+  /** Update the base URL text on the page. */
   function renderBase(){ $('#baseNow').textContent = state.base; }
+  /** Render token info (subject, tenant, expirations). */
   function renderTokenInfo(){
     const a = state.access; const c = decodeJwt(a)||{}; const rc = decodeJwt(state.refresh)||{};
     const parts=[];
@@ -121,6 +123,7 @@
     });
     tbl.appendChild(tbody); return tbl;
   }
+  /** Collect and normalize report parameters from the UI. */
   function getReportParams(){
     const p = new URLSearchParams();
     const period = ($('#rPeriod')?.value||'').trim() || 'week';
@@ -132,15 +135,18 @@
     return p;
   }
 
-  // Refresh helpers: use current filters to刷新“表示区域”
+  // Refresh helpers: use current filters to update the results area
+  /** Normalize task status to NEW/OPEN/CLOSED or empty string. */
   function normalizedTaskStatus(){
     const raw = ($('#taskStatus').value||'').trim().toUpperCase();
     return ['NEW','OPEN','CLOSED'].includes(raw) ? raw : '';
   }
+  /** Refresh projects results based on current filters. */
   async function refreshProjectsOutFromFilters(){
     const q = new URLSearchParams({ q: $('#projQ').value, page:'0', size:'10', sort:'createdAt', order:'desc' });
     const r = await api('/api/projects?'+q.toString()); renderOut(r,'#projectsOut');
   }
+  /** Refresh tasks results based on current filters. */
   async function refreshTasksOutFromFilters(){
     const pid = ($('#taskProjectId').value.trim() || lastProjectId());
     const status = normalizedTaskStatus();
@@ -149,6 +155,7 @@
     if(status) p.set('status', status);
     const r = await api('/api/tasks?'+p.toString()); renderOut(r,'#tasksOut');
   }
+  /** Refresh time-entries results based on current filters. */
   async function refreshTeOutFromFilters(){
     const p = new URLSearchParams({ page:'0', size:'10', sort:'startedAt', order:'desc' });
     const s=$('#teFilterStart').value, e=$('#teFilterEnd').value; const tid=$('#teTaskId').value.trim(); const uid=$('#teUserId').value.trim();
@@ -157,9 +164,11 @@
     if(isUuid(tid)) p.set('taskId', tid); if(isUuid(uid)) p.set('userId', uid);
     const r = await api('/api/time-entries?'+p.toString()); renderOut(r,'#teOut');
   }
+  /** True if the input string matches UUID v1-5 canonical format. */
   function isUuid(s){ return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(s).trim()); }
   function get(o, path){ try{ return path.split('.').reduce((x,k)=>(x||{})[k], o); }catch(e){ return undefined; } }
   function safe(v){ if(v==null) return ''; if(typeof v==='object') return JSON.stringify(v); return String(v); }
+  /** Switch visible section and keep nav active state. */
   function setActive(section){
     $$('#nav a').forEach(a=>a.classList.toggle('active', a.dataset.target===section));
     ['auth','projects','tasks','time','reports','health'].forEach(id=>{
@@ -211,7 +220,7 @@
       }
     });
     $('#projGet').addEventListener('click', async ()=>{ if(!requireAuth()) return;
-      // 查询：不依赖只读的 ID，按名称相关输入检索，并用表格展示
+      // Query: ignore read-only ID; search by name-related inputs and render as table
       const name = ($('#projName').value || $('#projQ').value || '').trim();
       const p = new URLSearchParams({ q: name, page:'0', size:'20', sort:'createdAt', order:'desc' });
       const r = await api('/api/projects?'+p.toString());
@@ -246,11 +255,11 @@
       if(!requireUuid(id)) return;
       const r=await api('/api/projects/'+id,{method:'DELETE'});
       if(!r.ok){ renderOut(r,'#projectsOut'); return; }
-      // 成功删除时，用友好的提示替代 HTTP 204
+      // On successful delete, show a friendly message instead of raw HTTP 204
       const el = document.querySelector('#projectsOut');
       if(el){ el.className='ok note'; el.textContent='✅ Deleted'; }
       toast('Project deleted');
-      // 清空已删除的ID并刷新列表（保留当前筛选条件）
+      // Clear deleted ID and refresh the list (keep current filters)
       $('#projId').value='';
       const btn=$('#projList'); if(btn) btn.click();
       await refreshProjectsOutFromFilters();
@@ -283,7 +292,7 @@
       }
     });
     $('#taskGet').addEventListener('click', async ()=>{ if(!requireAuth()) return;
-      // 查询：使用名称/项目ID/状态等非 ID 条件，表格展示
+      // Query: use non-ID filters (name/projectId/status) and render as table
       const name = ($('#taskName').value || $('#taskQ').value || '').trim();
       const status = normalizedTaskStatus();
       const pid = $('#taskProjectId').value.trim();
@@ -350,7 +359,7 @@
       }
     });
     $('#teGet').addEventListener('click', async ()=>{ if(!requireAuth()) return;
-      // 查询：使用 taskId/userId/time 窗口等非 ID 条件，表格展示
+      // Query: use taskId/userId/time-window filters (non-ID) and render as table
       const p=new URLSearchParams({ page:'0', size:'20', sort:'startedAt', order:'desc' });
       const s=$('#teFilterStart').value, e=$('#teFilterEnd').value; const tid=$('#teTaskId').value.trim(), uid=$('#teUserId').value.trim();
       if(s && !isNaN(Date.parse(s))) p.set('start', s);
@@ -464,6 +473,13 @@
     $('#btnHealth').addEventListener('click', async ()=>{ const r=await api('/api/health'); renderOut(r,'#healthOut'); if(r.ok) toast('Health: OK'); });
   }
 
+  /**
+   * Render a table list into wrapper and attach row click handler.
+   * @param {{ok:boolean,status:number,data:any}} result
+   * @param {string|HTMLElement} wrapSel
+   * @param {string[]} columns
+   * @param {(row:any)=>void} onRowClick
+   */
   function renderList(result, wrapSel, columns, onRowClick){
     const wrap = typeof wrapSel==='string' ? document.querySelector(wrapSel) : wrapSel;
     wrap.innerHTML='';
@@ -480,7 +496,9 @@
     wrap.appendChild(tbl);
   }
 
+  /** Write an HTTP-like result into the output area. */
   function renderOut(r, sel){ const el=$(sel); el.className = r.ok? 'ok note':'err note'; el.textContent = fmt(r); }
+  /** Format result object as text. */
   function fmt(r){ const body = typeof r.data==='string' ? r.data : JSON.stringify(r.data,null,2); return 'HTTP '+r.status+'\n'+body; }
   function isoNow(){ return new Date().toISOString(); }
   function isoMinusHours(h){ return new Date(Date.now()-h*3600*1000).toISOString(); }

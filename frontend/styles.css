@@ -72,7 +72,7 @@ button{
   background:linear-gradient(180deg,#5b85ff,#476ee3); color:#fff; border:1px solid #3f5fd6; padding:10px 14px;
   border-radius:10px; cursor:pointer; transition:transform .04s ease; white-space:nowrap
 }
-/* 统一按钮配色为蓝色 */
+/* Unify all button color scheme to blue */
 button.secondary,
 button.ghost{
   background:linear-gradient(180deg,#5b85ff,#476ee3); color:#fff; border:1px solid #3f5fd6;

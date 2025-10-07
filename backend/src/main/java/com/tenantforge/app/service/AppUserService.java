@@ -11,6 +11,9 @@ import java.util.UUID;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+/**
+ * User management utilities used by authentication and admin flows.
+ */
 @Service
 public class AppUserService {
 
@@ -22,14 +25,19 @@ public class AppUserService {
         this.passwordEncoder = passwordEncoder;
     }
 
+    /** Find active (not deleted) user by email (case-insensitive). */
     public Optional<AppUser> findByEmail(String email) {
         return userRepository.findByEmailIgnoreCase(email).filter(user -> !user.isDeleted());
     }
 
+    /** Find active (not deleted) user by id. */
     public Optional<AppUser> findById(UUID id) {
         return userRepository.findById(id).filter(user -> !user.isDeleted());
     }
 
+    /**
+     * Create a tenant admin user with encoded password.
+     */
     @Transactional
     public AppUser createAdmin(Tenant tenant, String email, String rawPassword, String displayName) {
         String hashed = passwordEncoder.encode(rawPassword);
@@ -37,6 +45,7 @@ public class AppUserService {
         return userRepository.save(user);
     }
 
+    /** Update and re-encode a user's password. */
     @Transactional
     public void updatePassword(AppUser user, String newPassword) {
         user.setPasswordHash(passwordEncoder.encode(newPassword));

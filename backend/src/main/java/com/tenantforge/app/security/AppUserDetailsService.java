@@ -11,6 +11,9 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+/**
+ * Bridges application users to Spring Security's {@link UserDetailsService}.
+ */
 @Service
 public class AppUserDetailsService implements UserDetailsService {
 
@@ -20,6 +23,7 @@ public class AppUserDetailsService implements UserDetailsService {
         this.userRepository = userRepository;
     }
 
+    /** Load active user by email (case-insensitive). */
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         AppUser user = userRepository
@@ -29,6 +33,7 @@ public class AppUserDetailsService implements UserDetailsService {
         return new AppUserPrincipal(user);
     }
 
+    /** Simple principal wrapper around {@link com.tenantforge.app.domain.AppUser}. */
     public static class AppUserPrincipal implements UserDetails {
         private final AppUser user;
         private final Collection<? extends GrantedAuthority> authorities;

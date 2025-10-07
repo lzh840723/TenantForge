@@ -21,7 +21,7 @@ public class CorsConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration cfg = new CorsConfiguration();
-        // Allow any header/method by default; restrict via property if需要
+        // Allow any header/method by default; restrict via property when needed
         cfg.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         cfg.addAllowedHeader("*");
         cfg.setAllowCredentials(false);

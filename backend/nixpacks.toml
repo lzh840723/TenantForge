@@ -1,0 +1,12 @@
+# Force Nixpacks to use the Java provider and tell it how to start.
+
+providers = ["java"]
+
+[phases.build]
+cmds = [
+  "mvn -B -DskipTests package"
+]
+
+[start]
+cmd = "java -Dserver.port=$PORT -jar target/tenantforge-backend-0.1.0-SNAPSHOT.jar"
+

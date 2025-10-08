@@ -1,0 +1,2 @@
+web: java -Dserver.port=${PORT:-8080} -jar target/tenantforge-backend-0.1.0-SNAPSHOT.jar
+
